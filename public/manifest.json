@@ -1,0 +1,19 @@
+{
+  "name": "EMAB ERP — Gestion commerciale multi-magasins",
+  "short_name": "EMAB ERP",
+  "description": "Plateforme de gestion commerciale, stock, ventes et finances pour réseaux de magasins.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f9f9f7",
+  "theme_color": "#1f63e0",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
