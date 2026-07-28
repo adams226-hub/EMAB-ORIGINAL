@@ -83,7 +83,7 @@ export function ProductImportModal({ open, onClose }: { open: boolean; onClose: 
         ) : (
           <>
             <p className="text-sm text-slate-500">
-              Colonnes attendues : <code className="text-xs">name, sku, barcode, category, unit, purchase_price,
+              Colonnes attendues : <code className="text-xs">name, sku, category, unit, purchase_price,
               sale_price, description</code>. Les SKU déjà existants sont ignorés.
             </p>
             <a href="/api/products/import-template">

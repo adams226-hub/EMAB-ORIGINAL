@@ -8,7 +8,6 @@ import { getCurrentProfile, requireRole } from "@/lib/auth/session";
 const productSchema = z.object({
   name: z.string().min(2, "Le nom est requis"),
   sku: z.string().min(2, "La référence (SKU) est requise"),
-  barcode: z.string().optional().nullable(),
   category_id: z.string().uuid().optional().nullable().or(z.literal("")),
   unit: z.string().min(1).default("pièce"),
   purchase_price: z.coerce.number().min(0),
@@ -33,7 +32,6 @@ export async function createProduct(input: ProductInput) {
     .insert({
       name: parsed.data.name,
       sku: parsed.data.sku,
-      barcode: parsed.data.barcode || null,
       category_id: parsed.data.category_id || null,
       unit: parsed.data.unit,
       purchase_price: parsed.data.purchase_price,
@@ -44,7 +42,7 @@ export async function createProduct(input: ProductInput) {
     .select("id")
     .single();
 
-  if (error) return { error: error.message.includes("duplicate") ? "Ce SKU ou code-barre existe déjà" : error.message };
+  if (error) return { error: error.message.includes("duplicate") ? "Ce SKU existe déjà" : error.message };
 
   if (profile.store_id && parsed.data.initial_quantity && parsed.data.initial_quantity > 0) {
     await supabase.from("product_stock").insert({
@@ -75,7 +73,6 @@ export async function updateProduct(id: string, input: ProductInput) {
     .update({
       name: parsed.data.name,
       sku: parsed.data.sku,
-      barcode: parsed.data.barcode || null,
       category_id: parsed.data.category_id || null,
       unit: parsed.data.unit,
       purchase_price: parsed.data.purchase_price,

@@ -4,7 +4,6 @@ import { toXlsx, xlsxResponse } from "@/lib/xlsx";
 const COLUMNS = [
   { key: "name", label: "name" },
   { key: "sku", label: "sku" },
-  { key: "barcode", label: "barcode" },
   { key: "category", label: "category" },
   { key: "unit", label: "unit" },
   { key: "purchase_price", label: "purchase_price" },

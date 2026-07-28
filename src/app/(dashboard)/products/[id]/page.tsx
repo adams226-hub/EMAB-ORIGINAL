@@ -55,10 +55,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">{productData.name}</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            SKU {productData.sku}
-            {productData.barcode ? ` · Code-barre ${productData.barcode}` : ""}
-          </p>
+          <p className="mt-1 text-sm text-slate-500">SKU {productData.sku}</p>
         </div>
         <Badge tone={productData.is_active ? "success" : "default"}>
           {productData.is_active ? "Actif" : "Inactif"}

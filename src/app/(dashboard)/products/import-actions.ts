@@ -8,7 +8,6 @@ import { requireRole } from "@/lib/auth/session";
 const importRowSchema = z.object({
   name: z.string().min(2),
   sku: z.string().min(2),
-  barcode: z.string().optional(),
   category: z.string().optional(),
   unit: z.string().optional(),
   purchase_price: z.coerce.number().min(0).default(0),
@@ -85,7 +84,6 @@ export async function importProducts(rows: unknown[]): Promise<{ error?: string;
     toInsert.push({
       name: row.name,
       sku: row.sku,
-      barcode: row.barcode || null,
       category_id: row.category ? categoryIdByName.get(row.category.trim()) ?? null : null,
       unit: row.unit || "pièce",
       purchase_price: row.purchase_price,

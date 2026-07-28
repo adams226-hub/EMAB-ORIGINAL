@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Minus, Trash2, Search, ShoppingBag, ScanLine } from "lucide-react";
+import { Plus, Minus, Trash2, Search, ShoppingBag } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormError } from "@/components/ui/FormError";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { BarcodeScannerModal } from "./BarcodeScannerModal";
 import { formatCurrency } from "@/lib/utils";
 import type { Customer, PaymentMethod } from "@/types/database.types";
 import { createSale } from "@/app/(dashboard)/pos/actions";
@@ -19,7 +18,6 @@ export interface POSProduct {
   id: string;
   name: string;
   sku: string;
-  barcode: string | null;
   sale_price: number;
   unit: string;
   stock_quantity: number;
@@ -57,14 +55,11 @@ export function POSTerminal({
   const [amountPaidTouched, setAmountPaidTouched] = useState(false);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | undefined>();
-  const [scannerOpen, setScannerOpen] = useState(false);
 
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return products;
-    return products.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.barcode === search.trim()
-    );
+    return products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
   }, [products, search]);
 
   const subtotal = cart.reduce(
@@ -110,20 +105,6 @@ export function POSTerminal({
   function removeLine(productId: string) {
     setCart((lines) => lines.filter((l) => l.product_id !== productId));
   }
-
-  const handleBarcodeDetected = useCallback(
-    (code: string) => {
-      setScannerOpen(false);
-      const match = products.find((p) => p.barcode === code);
-      if (match) {
-        addProduct(match);
-      } else {
-        setSearch(code);
-        setError(`Aucun produit ne correspond au code-barres ${code}.`);
-      }
-    },
-    [products]
-  );
 
   function resetSale() {
     setCart([]);
@@ -175,21 +156,15 @@ export function POSTerminal({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-4">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Rechercher un produit par nom, SKU ou code-barres..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-              autoFocus
-            />
-          </div>
-          <Button type="button" variant="secondary" onClick={() => setScannerOpen(true)}>
-            <ScanLine className="h-4 w-4" />
-            Scanner
-          </Button>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder="Rechercher un produit par nom ou SKU..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+            autoFocus
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -341,8 +316,6 @@ export function POSTerminal({
           </Button>
         </CardContent>
       </Card>
-
-      <BarcodeScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onDetect={handleBarcodeDetected} />
     </div>
   );
 }

@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 const productSchema = z.object({
   name: z.string().min(2),
   sku: z.string().min(2),
-  barcode: z.string().optional().nullable(),
   category_id: z.string().uuid().optional().nullable(),
   unit: z.string().min(1).default("pièce"),
   purchase_price: z.coerce.number().min(0),

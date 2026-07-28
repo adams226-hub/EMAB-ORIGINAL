@@ -28,14 +28,42 @@ export async function GET(request: NextRequest) {
   const { data: sales, error } = await query;
   if (error) return new Response(error.message, { status: 400 });
 
+  const saleIds = (sales ?? []).map((s) => s.id);
+  const { data: payments } = saleIds.length
+    ? await supabase
+        .from("payments")
+        .select("reference_id, amount, payment_methods ( name )")
+        .eq("type", "sale_payment")
+        .in("reference_id", saleIds)
+    : { data: [] };
+
+  type SalePaymentRow = { reference_id: string; amount: number; payment_methods: { name: string } | null };
+  const mobileMoneyBySale = new Map<string, number>();
+  const cashBySale = new Map<string, number>();
+
+  for (const p of (payments ?? []) as unknown as SalePaymentRow[]) {
+    const methodName = p.payment_methods?.name;
+    const bucket = methodName === "Mobile Money" ? mobileMoneyBySale : methodName === "Espèces" ? cashBySale : null;
+    if (!bucket) continue;
+    bucket.set(p.reference_id, (bucket.get(p.reference_id) ?? 0) + Number(p.amount));
+  }
+
+  const rows = (sales ?? []).map((s) => ({
+    ...s,
+    mobile_money_amount: mobileMoneyBySale.get(s.id) ?? 0,
+    cash_amount: cashBySale.get(s.id) ?? 0,
+  }));
+
   const xlsx = toXlsx(
-    sales ?? [],
+    rows,
     [
       { key: "reference", label: "Référence" },
       { key: "sale_date", label: "Date" },
       { key: "store_name", label: "Magasin" },
       { key: "customer_name", label: "Client" },
       { key: "subtotal", label: "Sous-total" },
+      { key: "mobile_money_amount", label: "Mobile Money" },
+      { key: "cash_amount", label: "Espèces" },
       { key: "discount_percent", label: "Remise (%)" },
       { key: "total_amount", label: "Total" },
       { key: "amount_paid", label: "Payé" },

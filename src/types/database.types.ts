@@ -64,7 +64,6 @@ export type Product = {
   id: string;
   name: string;
   sku: string;
-  barcode: string | null;
   category_id: string | null;
   description: string | null;
   unit: string;

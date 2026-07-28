@@ -34,7 +34,6 @@ export function ProductForm({
   const [values, setValues] = useState<ProductInput>({
     name: initial?.name ?? "",
     sku: initial?.sku ?? "",
-    barcode: initial?.barcode ?? "",
     category_id: initial?.category_id ?? "",
     unit: initial?.unit ?? "pièce",
     purchase_price: initial?.purchase_price ?? 0,
@@ -82,15 +81,6 @@ export function ProductForm({
             value={values.sku}
             onChange={(e) => setValues((v) => ({ ...v, sku: e.target.value }))}
             placeholder="RIZ-25KG"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="barcode">Code-barre</Label>
-          <Input
-            id="barcode"
-            value={values.barcode ?? ""}
-            onChange={(e) => setValues((v) => ({ ...v, barcode: e.target.value }))}
           />
         </div>
 
