@@ -70,6 +70,7 @@ export type Product = {
   unit_id: string | null;
   purchase_price: number;
   sale_price: number;
+  wholesale_price: number | null;
   image_url: string | null;
   is_active: boolean;
   created_by: string | null;
@@ -94,6 +95,7 @@ export type ProductOverview = {
   category_name: string | null;
   sale_price: number;
   purchase_price: number;
+  wholesale_price: number | null;
   is_active: boolean;
   total_stock: number;
   stores_low_stock: number;

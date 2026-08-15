@@ -48,6 +48,7 @@ export default async function POSPage({ searchParams }: { searchParams: { store?
     name: p.name,
     sku: p.sku,
     sale_price: p.sale_price,
+    wholesale_price: p.wholesale_price,
     unit: p.unit,
     stock_quantity: stockByProduct.get(p.id) ?? 0,
   }));

@@ -12,6 +12,7 @@ const productSchema = z.object({
   unit: z.string().min(1).default("pièce"),
   purchase_price: z.coerce.number().min(0),
   sale_price: z.coerce.number().min(0),
+  wholesale_price: z.coerce.number().min(0).optional().nullable(),
   description: z.string().optional().nullable(),
   initial_quantity: z.coerce.number().min(0).optional(),
   initial_stocks: z.array(z.object({ store_id: z.string().uuid(), quantity: z.coerce.number().min(0) })).optional(),
@@ -36,6 +37,7 @@ export async function createProduct(input: ProductInput) {
       unit: parsed.data.unit,
       purchase_price: parsed.data.purchase_price,
       sale_price: parsed.data.sale_price,
+      wholesale_price: parsed.data.wholesale_price || null,
       description: parsed.data.description || null,
       created_by: profile.id,
     })
@@ -77,6 +79,7 @@ export async function updateProduct(id: string, input: ProductInput) {
       unit: parsed.data.unit,
       purchase_price: parsed.data.purchase_price,
       sale_price: parsed.data.sale_price,
+      wholesale_price: parsed.data.wholesale_price || null,
       description: parsed.data.description || null,
     })
     .eq("id", id);

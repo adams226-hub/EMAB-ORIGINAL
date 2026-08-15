@@ -19,15 +19,19 @@ export interface POSProduct {
   name: string;
   sku: string;
   sale_price: number;
+  wholesale_price: number | null;
   unit: string;
   stock_quantity: number;
 }
+
+type SaleType = "retail" | "wholesale";
 
 interface CartLine {
   product_id: string;
   name: string;
   sku: string;
   unit_price: number;
+  sale_type: SaleType;
   quantity: number;
   discount_percent: number;
   available_stock: number;
@@ -47,6 +51,7 @@ export function POSTerminal({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
+  const [saleType, setSaleType] = useState<SaleType>("retail");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [customerId, setCustomerId] = useState("");
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id ?? "");
@@ -69,11 +74,18 @@ export function POSTerminal({
   const total = Math.round(subtotal * (1 - globalDiscount / 100) * 100) / 100;
   const effectiveAmountPaid = amountPaidTouched ? Number(amountPaid || 0) : total;
 
+  function priceFor(product: POSProduct, type: SaleType) {
+    return type === "wholesale" && product.wholesale_price != null ? product.wholesale_price : product.sale_price;
+  }
+
   function addProduct(product: POSProduct) {
+    const unit_price = priceFor(product, saleType);
     setCart((lines) => {
-      const existing = lines.find((l) => l.product_id === product.id);
+      const existing = lines.find((l) => l.product_id === product.id && l.sale_type === saleType);
       if (existing) {
-        return lines.map((l) => (l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l));
+        return lines.map((l) =>
+          l.product_id === product.id && l.sale_type === saleType ? { ...l, quantity: l.quantity + 1 } : l
+        );
       }
       return [
         ...lines,
@@ -81,7 +93,8 @@ export function POSTerminal({
           product_id: product.id,
           name: product.name,
           sku: product.sku,
-          unit_price: product.sale_price,
+          unit_price,
+          sale_type: saleType,
           quantity: 1,
           discount_percent: 0,
           available_stock: product.stock_quantity,
@@ -90,20 +103,24 @@ export function POSTerminal({
     });
   }
 
-  function updateQuantity(productId: string, quantity: number) {
+  function updateQuantity(productId: string, saleTypeKey: SaleType, quantity: number) {
     if (quantity <= 0) {
-      setCart((lines) => lines.filter((l) => l.product_id !== productId));
+      setCart((lines) => lines.filter((l) => !(l.product_id === productId && l.sale_type === saleTypeKey)));
       return;
     }
-    setCart((lines) => lines.map((l) => (l.product_id === productId ? { ...l, quantity } : l)));
+    setCart((lines) =>
+      lines.map((l) => (l.product_id === productId && l.sale_type === saleTypeKey ? { ...l, quantity } : l))
+    );
   }
 
-  function updateDiscount(productId: string, discount_percent: number) {
-    setCart((lines) => lines.map((l) => (l.product_id === productId ? { ...l, discount_percent } : l)));
+  function updateDiscount(productId: string, saleTypeKey: SaleType, discount_percent: number) {
+    setCart((lines) =>
+      lines.map((l) => (l.product_id === productId && l.sale_type === saleTypeKey ? { ...l, discount_percent } : l))
+    );
   }
 
-  function removeLine(productId: string) {
-    setCart((lines) => lines.filter((l) => l.product_id !== productId));
+  function removeLine(productId: string, saleTypeKey: SaleType) {
+    setCart((lines) => lines.filter((l) => !(l.product_id === productId && l.sale_type === saleTypeKey)));
   }
 
   function resetSale() {
@@ -167,22 +184,48 @@ export function POSTerminal({
           />
         </div>
 
+        <div className="flex rounded-lg border border-slate-200 bg-white p-1 text-sm font-medium">
+          <button
+            onClick={() => setSaleType("retail")}
+            className={`flex-1 rounded-md py-2 transition-colors ${
+              saleType === "retail" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50"
+            }`}
+          >
+            Vente au détail
+          </button>
+          <button
+            onClick={() => setSaleType("wholesale")}
+            className={`flex-1 rounded-md py-2 transition-colors ${
+              saleType === "wholesale" ? "bg-brand-600 text-white" : "text-slate-500 hover:bg-slate-50"
+            }`}
+          >
+            Vente en gros
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-          {filteredProducts.map((product) => (
-            <button
-              key={product.id}
-              onClick={() => addProduct(product)}
-              disabled={product.stock_quantity <= 0}
-              className="flex flex-col items-start rounded-xl border border-slate-200 bg-white p-3 text-left shadow-card transition-colors hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <span className="line-clamp-2 text-sm font-medium text-slate-900">{product.name}</span>
-              <span className="mt-1 text-xs text-slate-400">{product.sku}</span>
-              <div className="mt-2 flex w-full items-center justify-between">
-                <span className="text-sm font-semibold text-brand-600">{formatCurrency(product.sale_price)}</span>
-                <Badge tone={product.stock_quantity > 0 ? "default" : "danger"}>{product.stock_quantity} en stock</Badge>
-              </div>
-            </button>
-          ))}
+          {filteredProducts.map((product) => {
+            const hasWholesale = product.wholesale_price != null;
+            const price = priceFor(product, saleType);
+            return (
+              <button
+                key={product.id}
+                onClick={() => addProduct(product)}
+                disabled={product.stock_quantity <= 0}
+                className="flex flex-col items-start rounded-xl border border-slate-200 bg-white p-3 text-left shadow-card transition-colors hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <span className="line-clamp-2 text-sm font-medium text-slate-900">{product.name}</span>
+                <span className="mt-1 text-xs text-slate-400">{product.sku}</span>
+                <div className="mt-2 flex w-full items-center justify-between">
+                  <span className="text-sm font-semibold text-brand-600">{formatCurrency(price)}</span>
+                  <Badge tone={product.stock_quantity > 0 ? "default" : "danger"}>{product.stock_quantity} en stock</Badge>
+                </div>
+                {saleType === "wholesale" && !hasWholesale && (
+                  <span className="mt-1 text-[11px] text-amber-600">Pas de prix de gros — prix détail appliqué</span>
+                )}
+              </button>
+            );
+          })}
           {filteredProducts.length === 0 && (
             <div className="col-span-full">
               <EmptyState icon={ShoppingBag} title="Aucun produit" description="Aucun résultat pour cette recherche." />
@@ -203,29 +246,44 @@ export function POSTerminal({
               <p className="text-sm text-slate-400">Ajoutez des produits pour commencer une vente.</p>
             ) : (
               cart.map((line) => (
-                <div key={line.product_id} className="rounded-lg border border-slate-100 p-2">
+                <div key={`${line.product_id}-${line.sale_type}`} className="rounded-lg border border-slate-100 p-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-slate-900">{line.name}</p>
-                      <p className="text-xs text-slate-400">{formatCurrency(line.unit_price)} / unité</p>
+                      <p className="text-xs text-slate-400">
+                        {formatCurrency(line.unit_price)} / unité
+                        {line.sale_type === "wholesale" && (
+                          <Badge tone="default" className="ml-2">
+                            Gros
+                          </Badge>
+                        )}
+                      </p>
                     </div>
-                    <button onClick={() => removeLine(line.product_id)}>
+                    <button onClick={() => removeLine(line.product_id, line.sale_type)}>
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </button>
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1">
-                      <Button variant="secondary" size="sm" onClick={() => updateQuantity(line.product_id, line.quantity - 1)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => updateQuantity(line.product_id, line.sale_type, line.quantity - 1)}
+                      >
                         <Minus className="h-3 w-3" />
                       </Button>
                       <Input
                         type="number"
                         min={1}
                         value={line.quantity}
-                        onChange={(e) => updateQuantity(line.product_id, Number(e.target.value))}
+                        onChange={(e) => updateQuantity(line.product_id, line.sale_type, Number(e.target.value))}
                         className="h-8 w-14 text-center"
                       />
-                      <Button variant="secondary" size="sm" onClick={() => updateQuantity(line.product_id, line.quantity + 1)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => updateQuantity(line.product_id, line.sale_type, line.quantity + 1)}
+                      >
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
@@ -240,7 +298,7 @@ export function POSTerminal({
                       min={0}
                       max={100}
                       value={line.discount_percent}
-                      onChange={(e) => updateDiscount(line.product_id, Number(e.target.value))}
+                      onChange={(e) => updateDiscount(line.product_id, line.sale_type, Number(e.target.value))}
                       className="h-6 w-14 text-xs"
                     />
                     %

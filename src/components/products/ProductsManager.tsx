@@ -139,7 +139,12 @@ export function ProductsManager({
                   <div className="text-xs text-slate-400">{product.sku}</div>
                 </TD>
                 <TD>{product.category_name ?? "—"}</TD>
-                <TD>{formatCurrency(product.sale_price)}</TD>
+                <TD>
+                  <div>{formatCurrency(product.sale_price)}</div>
+                  {product.wholesale_price != null && (
+                    <div className="text-xs text-slate-400">Gros : {formatCurrency(product.wholesale_price)}</div>
+                  )}
+                </TD>
                 <TD>{product.total_stock.toLocaleString("fr-FR")}</TD>
                 <TD>
                   <button onClick={() => handleToggle(product)}>

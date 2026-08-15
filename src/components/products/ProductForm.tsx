@@ -38,6 +38,7 @@ export function ProductForm({
     unit: initial?.unit ?? "pièce",
     purchase_price: initial?.purchase_price ?? 0,
     sale_price: initial?.sale_price ?? 0,
+    wholesale_price: initial?.wholesale_price ?? null,
     description: initial?.description ?? "",
     initial_quantity: 0,
   });
@@ -123,7 +124,7 @@ export function ProductForm({
         </div>
 
         <div>
-          <Label htmlFor="sale_price">Prix de vente</Label>
+          <Label htmlFor="sale_price">Prix de vente (détail)</Label>
           <Input
             id="sale_price"
             type="number"
@@ -132,6 +133,21 @@ export function ProductForm({
             required
             value={values.sale_price}
             onChange={(e) => setValues((v) => ({ ...v, sale_price: Number(e.target.value) }))}
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="wholesale_price">Prix de gros (optionnel)</Label>
+          <Input
+            id="wholesale_price"
+            type="number"
+            min={0}
+            step="0.01"
+            placeholder="Laisser vide si pas de vente en gros"
+            value={values.wholesale_price ?? ""}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, wholesale_price: e.target.value === "" ? null : Number(e.target.value) }))
+            }
           />
         </div>
 
