@@ -31,6 +31,7 @@ export async function createCategory(input: CategoryInput) {
   if (error) return { error: error.message.includes("duplicate") ? "Cette catégorie existe déjà" : error.message };
 
   revalidatePath("/categories");
+  revalidatePath("/catalog");
   return {};
 }
 
@@ -52,6 +53,7 @@ export async function updateCategory(id: string, input: CategoryInput) {
   if (error) return { error: error.message };
 
   revalidatePath("/categories");
+  revalidatePath("/catalog");
   return {};
 }
 
@@ -67,5 +69,6 @@ export async function deleteCategory(id: string) {
     };
   }
   revalidatePath("/categories");
+  revalidatePath("/catalog");
   return {};
 }

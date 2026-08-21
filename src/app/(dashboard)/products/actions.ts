@@ -60,6 +60,7 @@ export async function createProduct(input: ProductInput) {
   }
 
   revalidatePath("/products");
+  revalidatePath("/catalog");
   revalidatePath("/dashboard");
   return {};
 }
@@ -87,6 +88,7 @@ export async function updateProduct(id: string, input: ProductInput) {
   if (error) return { error: error.message };
 
   revalidatePath("/products");
+  revalidatePath("/catalog");
   return {};
 }
 
@@ -96,6 +98,7 @@ export async function toggleProductActive(id: string, isActive: boolean) {
   const { error } = await supabase.from("products").update({ is_active: isActive }).eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/products");
+  revalidatePath("/catalog");
   return {};
 }
 
@@ -105,6 +108,7 @@ export async function deleteProduct(id: string) {
   const { error } = await supabase.from("products").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/products");
+  revalidatePath("/catalog");
   revalidatePath("/dashboard");
   return {};
 }

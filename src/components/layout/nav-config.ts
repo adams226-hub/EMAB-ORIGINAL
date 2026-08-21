@@ -2,14 +2,12 @@ import type { ModuleKey } from "@/lib/auth/permissions";
 import {
   LayoutDashboard,
   Store,
-  Tags,
   Package,
   Users,
   Settings,
   Warehouse,
   History,
   ClipboardList,
-  Ruler,
   ShoppingBag,
   Receipt,
   UserRound,
@@ -64,11 +62,7 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Catalogue",
-    items: [
-      { key: "categories", label: "Catégories", href: "/categories", icon: Tags },
-      { key: "products", label: "Produits", href: "/products", icon: Package },
-      { key: "units", label: "Unités", href: "/units", icon: Ruler },
-    ],
+    items: [{ key: "products", label: "Catalogue", href: "/catalog", icon: Package }],
   },
   {
     label: "Stock",

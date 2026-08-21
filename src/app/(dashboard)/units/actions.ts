@@ -24,6 +24,7 @@ export async function createUnit(input: UnitInput) {
   if (error) return { error: error.message.includes("duplicate") ? "Cette unité existe déjà" : error.message };
 
   revalidatePath("/units");
+  revalidatePath("/catalog");
   return {};
 }
 
@@ -37,6 +38,7 @@ export async function updateUnit(id: string, input: UnitInput) {
   if (error) return { error: error.message };
 
   revalidatePath("/units");
+  revalidatePath("/catalog");
   return {};
 }
 
@@ -52,5 +54,6 @@ export async function deleteUnit(id: string) {
     };
   }
   revalidatePath("/units");
+  revalidatePath("/catalog");
   return {};
 }

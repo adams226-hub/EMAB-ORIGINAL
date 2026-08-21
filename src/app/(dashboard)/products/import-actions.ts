@@ -102,5 +102,6 @@ export async function importProducts(rows: unknown[]): Promise<{ error?: string;
   }
 
   revalidatePath("/products");
+  revalidatePath("/catalog");
   return { summary: { created, skipped } };
 }
