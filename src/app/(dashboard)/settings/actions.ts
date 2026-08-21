@@ -24,6 +24,7 @@ export async function updateOwnProfile(input: z.infer<typeof profileSchema>) {
   if (error) return { error: error.message };
 
   revalidatePath("/settings");
+  revalidatePath("/administration");
   return {};
 }
 

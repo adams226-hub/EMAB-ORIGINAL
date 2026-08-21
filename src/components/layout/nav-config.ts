@@ -1,9 +1,7 @@
 import type { ModuleKey } from "@/lib/auth/permissions";
 import {
   LayoutDashboard,
-  Store,
   Package,
-  Users,
   Settings,
   Warehouse,
   History,
@@ -77,10 +75,8 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Administration",
     items: [
-      { key: "stores", label: "Magasins", href: "/stores", icon: Store },
-      { key: "users", label: "Utilisateurs", href: "/users", icon: Users },
+      { key: "settings", label: "Administration", href: "/administration", icon: Settings },
       { key: "audit_log", label: "Journal d'audit", href: "/audit-log", icon: History },
-      { key: "settings", label: "Paramètres", href: "/settings", icon: Settings },
     ],
   },
 ];

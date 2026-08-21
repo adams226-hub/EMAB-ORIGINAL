@@ -37,6 +37,7 @@ export async function createStore(input: StoreInput) {
   if (error) return { error: error.message.includes("duplicate") ? "Ce code magasin existe déjà" : error.message };
 
   revalidatePath("/stores");
+  revalidatePath("/administration");
   revalidatePath("/dashboard");
   return {};
 }
@@ -51,6 +52,7 @@ export async function updateStore(id: string, input: StoreInput) {
   if (error) return { error: error.message };
 
   revalidatePath("/stores");
+  revalidatePath("/administration");
   return {};
 }
 
@@ -61,6 +63,7 @@ export async function toggleStoreActive(id: string, isActive: boolean) {
   if (error) return { error: error.message };
 
   revalidatePath("/stores");
+  revalidatePath("/administration");
   return {};
 }
 
@@ -77,6 +80,7 @@ export async function deleteStore(id: string) {
   }
 
   revalidatePath("/stores");
+  revalidatePath("/administration");
   revalidatePath("/dashboard");
   return {};
 }

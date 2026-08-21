@@ -70,6 +70,7 @@ export async function createUser(input: CreateUserInput) {
   }
 
   revalidatePath("/users");
+  revalidatePath("/administration");
   revalidatePath("/dashboard");
   return {};
 }
@@ -92,6 +93,7 @@ export async function updateUser(id: string, input: UpdateUserInput) {
   if (error) return { error: error.message };
 
   revalidatePath("/users");
+  revalidatePath("/administration");
   return {};
 }
 
@@ -101,6 +103,7 @@ export async function toggleUserActive(id: string, isActive: boolean) {
   const { error } = await supabase.from("profiles").update({ is_active: isActive }).eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/users");
+  revalidatePath("/administration");
   return {};
 }
 
@@ -113,6 +116,7 @@ export async function deleteUser(id: string) {
   if (error) return { error: error.message };
 
   revalidatePath("/users");
+  revalidatePath("/administration");
   revalidatePath("/dashboard");
   return {};
 }
