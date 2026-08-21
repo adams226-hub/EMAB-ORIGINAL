@@ -13,7 +13,6 @@ import {
   ShoppingBag,
   Receipt,
   UserRound,
-  HandCoins,
   Wallet,
   Banknote,
   Landmark,
@@ -21,6 +20,8 @@ import {
   FileBarChart,
   BarChart3,
   TrendingUp,
+  PackagePlus,
+  PackageMinus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -54,7 +55,6 @@ export const NAV_SECTIONS: NavSection[] = [
       { key: "pos", label: "Point de vente", href: "/pos", icon: ShoppingBag },
       { key: "sales", label: "Ventes", href: "/sales", icon: Receipt },
       { key: "customers", label: "Clients", href: "/customers", icon: UserRound },
-      { key: "receivables", label: "Créances clients", href: "/receivables", icon: HandCoins },
       { key: "expenses", label: "Dépenses", href: "/expenses", icon: Wallet },
       { key: "cash_register", label: "Caisse", href: "/cash-register", icon: Banknote },
       { key: "financial_dashboard", label: "Dashboard financier", href: "/finance", icon: LineChart },
@@ -74,6 +74,8 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Stock",
     items: [
       { key: "stock_dashboard", label: "Vue d'ensemble stock", href: "/stock", icon: Warehouse },
+      { key: "stock_in", label: "Entrées de stock", href: "/stock/in", icon: PackagePlus },
+      { key: "stock_out", label: "Sorties de stock", href: "/stock/out", icon: PackageMinus },
       { key: "stock_movements", label: "Mouvements", href: "/stock/movements", icon: History },
       { key: "stock_counts", label: "Inventaires", href: "/stock/counts", icon: ClipboardList },
     ],

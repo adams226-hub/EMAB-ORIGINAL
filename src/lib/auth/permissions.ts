@@ -10,6 +10,8 @@ export type ModuleKey =
   | "stock_dashboard"
   | "stock_movements"
   | "stock_counts"
+  | "stock_in"
+  | "stock_out"
   | "units"
   | "pos"
   | "sales"
@@ -40,6 +42,8 @@ export const MODULE_PERMISSIONS: Record<ModuleKey, UserRole[]> = {
   stock_dashboard: ["super_admin", "manager", "stock_keeper"],
   stock_movements: ["super_admin", "manager", "stock_keeper"],
   stock_counts: ["super_admin", "manager", "stock_keeper"],
+  stock_in: ["super_admin", "manager", "stock_keeper"],
+  stock_out: ["super_admin", "manager", "stock_keeper"],
   units: ["super_admin", "manager"],
   pos: ["super_admin", "manager", "cashier"],
   sales: ["super_admin", "manager", "cashier"],
