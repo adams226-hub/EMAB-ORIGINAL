@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import type { Product, Store, StockMovementDetail } from "@/types/database.types";
 import { ManualMovementForm, type ManualMovementKind } from "./ManualMovementForm";
 import { StockMovementsTable } from "./StockMovementsTable";
+import { StockMovementNav } from "./StockMovementNav";
 import { createManualMovementsBulk, type ManualMovementsBulkInput } from "@/app/(dashboard)/stock/actions";
 
 const TITLES: Record<ManualMovementKind, { title: string; cta: string; subtitle: string }> = {
@@ -53,6 +54,8 @@ export function ManualMovementManager({
 
   return (
     <div className="space-y-4">
+      {kind !== "adjustment" && <StockMovementNav />}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">{copy.title}</h1>

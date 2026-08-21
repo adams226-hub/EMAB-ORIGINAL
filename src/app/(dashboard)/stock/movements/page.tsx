@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import Link from "next/link";
 import { StockMovementsTable } from "@/components/stock/StockMovementsTable";
+import { StockMovementNav } from "@/components/stock/StockMovementNav";
 import { MovementsFilterBar } from "@/components/stock/MovementsFilterBar";
 import { cn } from "@/lib/utils";
 import type { MovementType } from "@/types/database.types";
@@ -68,6 +69,8 @@ export default async function StockMovementsPage({
 
   return (
     <div className="space-y-4">
+      <StockMovementNav />
+
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Journal des mouvements</h1>
         <p className="mt-1 text-sm text-slate-500">

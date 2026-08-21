@@ -17,7 +17,6 @@ import {
   BarChart3,
   TrendingUp,
   PackagePlus,
-  PackageMinus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -66,9 +65,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Stock",
     items: [
       { key: "stock_dashboard", label: "Vue d'ensemble stock", href: "/stock", icon: Warehouse },
-      { key: "stock_in", label: "Entrées de stock", href: "/stock/in", icon: PackagePlus },
-      { key: "stock_out", label: "Sorties de stock", href: "/stock/out", icon: PackageMinus },
-      { key: "stock_movements", label: "Mouvements", href: "/stock/movements", icon: History },
+      { key: "stock_in", label: "Entrées / Sorties / Mouvements", href: "/stock/in", icon: PackagePlus },
       { key: "stock_counts", label: "Inventaires", href: "/stock/counts", icon: ClipboardList },
     ],
   },
