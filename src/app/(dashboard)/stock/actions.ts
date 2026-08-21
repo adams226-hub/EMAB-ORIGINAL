@@ -9,21 +9,25 @@ import type { MovementType } from "@/types/database.types";
 
 const WRITE_ROLES = ["super_admin", "manager", "stock_keeper"] as const;
 
-const manualMovementSchema = z.object({
-  type: z.enum(["in", "out", "adjustment_in", "adjustment_out"]),
-  product_id: z.string().uuid("Produit requis"),
-  store_id: z.string().uuid("Magasin requis"),
+const manualMovementLineSchema = z.object({
+  product_id: z.string().uuid(),
   quantity: z.coerce.number().positive("La quantité doit être supérieure à 0"),
   unit_cost: z.coerce.number().min(0).optional(),
-  reason: z.string().optional(),
-  notes: z.string().optional(),
 });
 
-export type ManualMovementInput = z.infer<typeof manualMovementSchema>;
+const manualMovementsBulkSchema = z.object({
+  type: z.enum(["in", "out", "adjustment_in", "adjustment_out"]),
+  store_id: z.string().uuid("Magasin requis"),
+  reason: z.string().optional(),
+  notes: z.string().optional(),
+  items: z.array(manualMovementLineSchema).min(1, "Ajoutez au moins un produit"),
+});
 
-export async function createManualMovement(input: ManualMovementInput) {
+export type ManualMovementsBulkInput = z.infer<typeof manualMovementsBulkSchema>;
+
+export async function createManualMovementsBulk(input: ManualMovementsBulkInput) {
   const profile = await requireRole([...WRITE_ROLES]);
-  const parsed = manualMovementSchema.safeParse(input);
+  const parsed = manualMovementsBulkSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
   if (profile.role !== "super_admin" && profile.store_id !== parsed.data.store_id) {
@@ -31,22 +35,24 @@ export async function createManualMovement(input: ManualMovementInput) {
   }
 
   const supabase = createClient();
-  const { error } = await supabase.from("stock_movements").insert({
+  const rows = parsed.data.items.map((item) => ({
     type: parsed.data.type,
-    product_id: parsed.data.product_id,
+    product_id: item.product_id,
     store_id: parsed.data.store_id,
-    quantity: parsed.data.quantity,
-    unit_cost: parsed.data.unit_cost ?? null,
+    quantity: item.quantity,
+    unit_cost: item.unit_cost ?? null,
     reason: parsed.data.reason || null,
     notes: parsed.data.notes || null,
     reference_type: "manual",
     created_by: profile.id,
-  });
+  }));
+
+  const { error } = await supabase.from("stock_movements").insert(rows);
 
   if (error) {
     return {
       error: error.message.includes("check constraint")
-        ? "Stock insuffisant pour cette opération dans ce magasin."
+        ? "Stock insuffisant pour un des produits de cette opération."
         : error.message,
     };
   }
@@ -56,7 +62,9 @@ export async function createManualMovement(input: ManualMovementInput) {
   revalidatePath("/dashboard");
 
   if (parsed.data.type === "out" || parsed.data.type === "adjustment_out") {
-    await notifyIfLowStock(supabase, parsed.data.product_id, parsed.data.store_id);
+    for (const item of parsed.data.items) {
+      await notifyIfLowStock(supabase, item.product_id, parsed.data.store_id);
+    }
   }
 
   return {};

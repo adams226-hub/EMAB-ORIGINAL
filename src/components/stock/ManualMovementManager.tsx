@@ -8,7 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import type { Product, Store, StockMovementDetail } from "@/types/database.types";
 import { ManualMovementForm, type ManualMovementKind } from "./ManualMovementForm";
 import { StockMovementsTable } from "./StockMovementsTable";
-import { createManualMovement, type ManualMovementInput } from "@/app/(dashboard)/stock/actions";
+import { createManualMovementsBulk, type ManualMovementsBulkInput } from "@/app/(dashboard)/stock/actions";
 
 const TITLES: Record<ManualMovementKind, { title: string; cta: string; subtitle: string }> = {
   in: { title: "Entrées de stock", cta: "Nouvelle entrée", subtitle: "Réceptions manuelles de marchandise" },
@@ -39,9 +39,9 @@ export function ManualMovementManager({
 
   const reversedIds = new Set(movements.filter((m) => m.reversal_of).map((m) => m.reversal_of as string));
 
-  function handleSubmit(input: ManualMovementInput) {
+  function handleSubmit(input: ManualMovementsBulkInput) {
     startTransition(async () => {
-      const result = await createManualMovement(input);
+      const result = await createManualMovementsBulk(input);
       if (result.error) {
         setError(result.error);
         return;
