@@ -54,6 +54,8 @@ export function POSTerminal({
   const [saleType, setSaleType] = useState<SaleType>("retail");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [customerId, setCustomerId] = useState("");
+  const [walkinName, setWalkinName] = useState("");
+  const [walkinPhone, setWalkinPhone] = useState("");
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id ?? "");
   const [globalDiscount, setGlobalDiscount] = useState(0);
   const [amountPaid, setAmountPaid] = useState<string>("");
@@ -126,6 +128,8 @@ export function POSTerminal({
   function resetSale() {
     setCart([]);
     setCustomerId("");
+    setWalkinName("");
+    setWalkinPhone("");
     setGlobalDiscount(0);
     setAmountPaid("");
     setAmountPaidTouched(false);
@@ -152,6 +156,8 @@ export function POSTerminal({
         payment_method_id: effectiveAmountPaid > 0 ? paymentMethodId : null,
         amount_paid: effectiveAmountPaid,
         notes: notes || undefined,
+        walkin_name: customerId ? undefined : walkinName || undefined,
+        walkin_phone: customerId ? undefined : walkinPhone || undefined,
         items: cart.map((l) => ({
           product_id: l.product_id,
           quantity: l.quantity,
@@ -339,6 +345,21 @@ export function POSTerminal({
                 </option>
               ))}
             </Select>
+
+            {!customerId && (
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  placeholder="Nom du client (optionnel)"
+                  value={walkinName}
+                  onChange={(e) => setWalkinName(e.target.value)}
+                />
+                <Input
+                  placeholder="Téléphone (optionnel)"
+                  value={walkinPhone}
+                  onChange={(e) => setWalkinPhone(e.target.value)}
+                />
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Select value={paymentMethodId} onChange={(e) => setPaymentMethodId(e.target.value)} className="flex-1">

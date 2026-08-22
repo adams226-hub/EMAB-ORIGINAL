@@ -329,6 +329,7 @@ export type SaleDetail = {
   status: SaleStatus;
   notes: string | null;
   created_at: string;
+  customer_phone: string | null;
 };
 
 export type CustomerReceivable = {

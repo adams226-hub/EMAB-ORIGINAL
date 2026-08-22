@@ -18,6 +18,8 @@ const createSaleSchema = z.object({
   payment_method_id: z.string().uuid().optional().nullable(),
   amount_paid: z.coerce.number().min(0),
   notes: z.string().optional(),
+  walkin_name: z.string().optional(),
+  walkin_phone: z.string().optional(),
   items: z.array(cartItemSchema).min(1, "Le panier est vide"),
 });
 
@@ -41,6 +43,8 @@ export async function createSale(input: CreateSaleInput) {
     p_amount_paid: parsed.data.amount_paid,
     p_notes: parsed.data.notes || null,
     p_items: parsed.data.items,
+    p_walkin_name: parsed.data.walkin_name || null,
+    p_walkin_phone: parsed.data.walkin_phone || null,
   });
 
   if (error) {

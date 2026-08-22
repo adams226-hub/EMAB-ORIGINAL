@@ -56,6 +56,7 @@ export default async function SaleReceiptPage({ params }: { params: { id: string
           <p>Reçu : {sale.reference}</p>
           <p>Date : {formatDate(sale.sale_date)}</p>
           <p>Client : {sale.customer_name ?? "Client de passage"}</p>
+          {sale.customer_phone && <p>Téléphone : {sale.customer_phone}</p>}
           {sale.sold_by_name && <p>Servi par : {sale.sold_by_name}</p>}
         </div>
 
