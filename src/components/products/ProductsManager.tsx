@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Package, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Search, Upload } from "lucide-react";
 import { ProductImportModal } from "./ProductImportModal";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -45,6 +46,15 @@ export function ProductsManager({
   const [editing, setEditing] = useState<ProductRow | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [importOpen, setImportOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredProducts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter(
+      (p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || (p.category_name ?? "").toLowerCase().includes(q)
+    );
+  }, [products, search]);
 
   function openCreate() {
     setEditing(null);
@@ -118,6 +128,20 @@ export function ProductsManager({
           }
         />
       ) : (
+        <>
+          <div className="relative max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Rechercher par nom, SKU ou catégorie..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {filteredProducts.length === 0 ? (
+            <EmptyState icon={Search} title="Aucun résultat" description="Aucun produit ne correspond à cette recherche." />
+          ) : (
         <Table>
           <THead>
             <TR>
@@ -130,7 +154,7 @@ export function ProductsManager({
             </TR>
           </THead>
           <TBody>
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <TR key={product.id}>
                 <TD>
                   <Link href={`/products/${product.id}`} className="font-medium text-slate-900 hover:text-brand-600">
@@ -169,6 +193,8 @@ export function ProductsManager({
             ))}
           </TBody>
         </Table>
+          )}
+        </>
       )}
 
       <Modal
