@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, requireRole } from "@/lib/auth/session";
 
 const productSchema = z.object({
-  name: z.string().min(2, "Le nom est requis"),
-  sku: z.string().min(2, "La référence (SKU) est requise"),
+  name: z.string().min(1, "Le nom est requis"),
+  sku: z.string().min(1, "La référence (SKU) est requise"),
   category_id: z.string().uuid().optional().nullable().or(z.literal("")),
   unit: z.string().min(1).default("pièce"),
   purchase_price: z.coerce.number().min(0),

@@ -48,10 +48,18 @@ export async function GET(request: NextRequest) {
     bucket.set(p.reference_id, (bucket.get(p.reference_id) ?? 0) + Number(p.amount));
   }
 
+  const PAYMENT_STATUS_LABELS: Record<string, string> = {
+    paid: "Payé",
+    partial: "Partiel",
+    unpaid: "Impayé",
+    cancelled: "Annulée",
+  };
+
   const rows = (sales ?? []).map((s) => ({
     ...s,
     mobile_money_amount: mobileMoneyBySale.get(s.id) ?? 0,
     cash_amount: cashBySale.get(s.id) ?? 0,
+    payment_status: PAYMENT_STATUS_LABELS[s.payment_status] ?? s.payment_status,
   }));
 
   const salesById = new Map((sales ?? []).map((s) => [s.id, s]));

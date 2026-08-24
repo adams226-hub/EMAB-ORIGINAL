@@ -6,8 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 
 const importRowSchema = z.object({
-  name: z.string().min(2),
-  sku: z.string().min(2),
+  name: z.string().min(1),
+  sku: z.string().min(1),
   category: z.string().optional(),
   unit: z.string().optional(),
   purchase_price: z.coerce.number().min(0).default(0),
