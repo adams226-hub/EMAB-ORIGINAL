@@ -3,8 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Package, Search, Upload } from "lucide-react";
-import { ProductImportModal } from "./ProductImportModal";
+import { Plus, Pencil, Trash2, Package, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
@@ -45,7 +44,6 @@ export function ProductsManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ProductRow | null>(null);
   const [error, setError] = useState<string | undefined>();
-  const [importOpen, setImportOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const filteredProducts = useMemo(() => {
@@ -104,10 +102,6 @@ export function ProductsManager({
           <p className="mt-1 text-sm text-slate-500">{products.length} produit(s) au catalogue</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setImportOpen(true)}>
-            <Upload className="h-4 w-4" />
-            Importer Excel
-          </Button>
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Nouveau produit
@@ -214,8 +208,6 @@ export function ProductsManager({
           onCancel={() => setModalOpen(false)}
         />
       </Modal>
-
-      <ProductImportModal open={importOpen} onClose={() => setImportOpen(false)} />
     </div>
   );
 }
