@@ -217,8 +217,7 @@ export function POSTerminal({
               <button
                 key={product.id}
                 onClick={() => addProduct(product)}
-                disabled={product.stock_quantity <= 0}
-                className="flex flex-col items-start rounded-xl border border-slate-200 bg-white p-3 text-left shadow-card transition-colors hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex flex-col items-start rounded-xl border border-slate-200 bg-white p-3 text-left shadow-card transition-colors hover:border-brand-300 hover:bg-brand-50"
               >
                 <span className="line-clamp-2 text-sm font-medium text-slate-900">{product.name}</span>
                 <span className="mt-1 text-xs text-slate-400">{product.sku}</span>

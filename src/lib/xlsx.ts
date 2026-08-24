@@ -64,14 +64,23 @@ function buildSheetXml<T extends Record<string, unknown>>(
   );
 }
 
-const CONTENT_TYPES_XML =
-  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-  '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
-  '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
-  '<Default Extension="xml" ContentType="application/xml"/>' +
-  '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
-  '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
-  "</Types>";
+function contentTypesXml(sheetCount: number): string {
+  const overrides = Array.from(
+    { length: sheetCount },
+    (_, i) =>
+      `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`
+  ).join("");
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+    overrides +
+    "</Types>"
+  );
+}
 
 const ROOT_RELS_XML =
   '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -79,20 +88,33 @@ const ROOT_RELS_XML =
   '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
   "</Relationships>";
 
-function workbookXml(sheetName: string): string {
+function workbookXml(sheetNames: string[]): string {
+  const sheets = sheetNames
+    .map((name, i) => `<sheet name="${xmlEscape(name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`)
+    .join("");
+
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-    `<sheets><sheet name="${xmlEscape(sheetName)}" sheetId="1" r:id="rId1"/></sheets>` +
+    `<sheets>${sheets}</sheets>` +
     "</workbook>"
   );
 }
 
-const WORKBOOK_RELS_XML =
-  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-  '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-  '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
-  "</Relationships>";
+function workbookRelsXml(sheetCount: number): string {
+  const rels = Array.from(
+    { length: sheetCount },
+    (_, i) =>
+      `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`
+  ).join("");
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    rels +
+    "</Relationships>"
+  );
+}
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
@@ -180,20 +202,34 @@ function buildZip(files: { name: string; content: string }[]): Buffer {
   return Buffer.concat([...localChunks, ...centralChunks, eocd]);
 }
 
+export interface XlsxSheet<T extends Record<string, unknown> = Record<string, unknown>> {
+  name: string;
+  rows: T[];
+  columns: { key: keyof T; label: string }[];
+}
+
+/** Génère un classeur .xlsx à plusieurs feuilles à partir de lignes d'objets. */
+export function toXlsxMulti(sheets: XlsxSheet[]): Buffer {
+  const files = [
+    { name: "[Content_Types].xml", content: contentTypesXml(sheets.length) },
+    { name: "_rels/.rels", content: ROOT_RELS_XML },
+    { name: "xl/workbook.xml", content: workbookXml(sheets.map((s) => s.name)) },
+    { name: "xl/_rels/workbook.xml.rels", content: workbookRelsXml(sheets.length) },
+    ...sheets.map((s, i) => ({
+      name: `xl/worksheets/sheet${i + 1}.xml`,
+      content: buildSheetXml(s.rows, s.columns),
+    })),
+  ];
+  return buildZip(files);
+}
+
 /** Génère un classeur .xlsx à une feuille à partir de lignes d'objets. */
 export function toXlsx<T extends Record<string, unknown>>(
   rows: T[],
   columns: { key: keyof T; label: string }[],
   sheetName = "Feuille1"
 ): Buffer {
-  const files = [
-    { name: "[Content_Types].xml", content: CONTENT_TYPES_XML },
-    { name: "_rels/.rels", content: ROOT_RELS_XML },
-    { name: "xl/workbook.xml", content: workbookXml(sheetName) },
-    { name: "xl/_rels/workbook.xml.rels", content: WORKBOOK_RELS_XML },
-    { name: "xl/worksheets/sheet1.xml", content: buildSheetXml(rows, columns) },
-  ];
-  return buildZip(files);
+  return toXlsxMulti([{ name: sheetName, rows, columns: columns as unknown as XlsxSheet["columns"] }]);
 }
 
 export function xlsxResponse(buffer: Buffer, filename: string): Response {

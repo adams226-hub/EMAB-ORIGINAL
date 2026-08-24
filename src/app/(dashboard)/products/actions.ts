@@ -106,7 +106,13 @@ export async function deleteProduct(id: string) {
   await requireRole(["super_admin"]);
   const supabase = createClient();
   const { error } = await supabase.from("products").delete().eq("id", id);
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: error.message.includes("foreign key constraint")
+        ? "Ce produit a déjà des mouvements de stock ou des ventes enregistrées : il ne peut pas être supprimé. Désactivez-le plutôt (bouton Actif/Inactif)."
+        : error.message,
+    };
+  }
   revalidatePath("/products");
   revalidatePath("/catalog");
   revalidatePath("/dashboard");

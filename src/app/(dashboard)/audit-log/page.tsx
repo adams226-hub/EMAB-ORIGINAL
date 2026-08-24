@@ -47,7 +47,6 @@ export default async function AuditLogPage({
           <option value="sales">Ventes</option>
           <option value="expenses">Dépenses</option>
           <option value="stock_counts">Inventaires</option>
-          <option value="cash_sessions">Sessions de caisse</option>
         </Select>
         <Button type="submit" variant="secondary">
           Filtrer

@@ -18,7 +18,6 @@ export type ModuleKey =
   | "customers"
   | "receivables"
   | "expenses"
-  | "cash_register"
   | "payment_methods"
   | "financial_dashboard"
   | "financial_reports"
@@ -27,8 +26,8 @@ export type ModuleKey =
 
 /**
  * Matrice de permissions. Chaque module liste les rôles autorisés à y
- * accéder. La Phase 3 (ventes, caisse, finances) donne enfin un rôle
- * concret au caissier : point de vente, ventes, clients, créances, caisse.
+ * accéder. La Phase 3 (ventes, finances) donne enfin un rôle concret au
+ * caissier : point de vente, ventes, clients, créances.
  * Les dépenses, dettes fournisseurs et rapports restent des décisions
  * managériales (super_admin / manager).
  */
@@ -50,7 +49,6 @@ export const MODULE_PERMISSIONS: Record<ModuleKey, UserRole[]> = {
   customers: ["super_admin", "manager", "cashier"],
   receivables: ["super_admin", "manager", "cashier"],
   expenses: ["super_admin", "manager"],
-  cash_register: ["super_admin", "manager", "cashier"],
   payment_methods: ["super_admin", "manager"],
   financial_dashboard: ["super_admin", "manager"],
   financial_reports: ["super_admin", "manager"],
@@ -68,7 +66,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   super_admin: "Accès total à tous les magasins et modules",
   manager: "Accès complet à son magasin uniquement",
-  cashier: "Accès au point de vente, ventes, clients, créances et caisse",
+  cashier: "Accès au point de vente, ventes, clients et créances",
   stock_keeper: "Accès à la gestion du stock et des produits",
 };
 

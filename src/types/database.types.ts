@@ -195,13 +195,11 @@ export type StockCountItem = {
 };
 
 // ---------------------------------------------------------------------
-// Phase 3 — Ventes, caisse, finances
+// Phase 3 — Ventes, finances
 // ---------------------------------------------------------------------
 
 export type SaleStatus = "completed" | "cancelled";
 export type PaymentType = "sale_payment";
-export type CashSessionStatus = "open" | "closed";
-export type CashAdjustmentType = "in" | "out";
 export type PaymentStatus = "paid" | "partial" | "unpaid" | "cancelled";
 
 export type PaymentMethod = {
@@ -281,32 +279,6 @@ export type Payment = {
   paid_by: string | null;
   payment_date: string;
   notes: string | null;
-  created_at: string;
-};
-
-export type CashSession = {
-  id: string;
-  store_id: string;
-  status: CashSessionStatus;
-  opened_by: string | null;
-  opened_at: string;
-  opening_amount: number;
-  closed_by: string | null;
-  closed_at: string | null;
-  closing_amount: number | null;
-  expected_amount: number | null;
-  notes: string | null;
-  difference: number | null;
-};
-
-export type CashAdjustment = {
-  id: string;
-  cash_session_id: string;
-  store_id: string;
-  type: CashAdjustmentType;
-  amount: number;
-  reason: string;
-  created_by: string | null;
   created_at: string;
 };
 
@@ -507,18 +479,6 @@ export type Database = {
         Update: Partial<Payment>;
         Relationships: [];
       };
-      cash_sessions: {
-        Row: CashSession;
-        Insert: Partial<CashSession>;
-        Update: Partial<CashSession>;
-        Relationships: [];
-      };
-      cash_adjustments: {
-        Row: CashAdjustment;
-        Insert: Partial<CashAdjustment>;
-        Update: Partial<CashAdjustment>;
-        Relationships: [];
-      };
       push_subscriptions: {
         Row: PushSubscriptionRow;
         Insert: Partial<PushSubscriptionRow>;
@@ -562,11 +522,6 @@ export type Database = {
         };
         Returns: Payment;
       };
-      fn_open_cash_session: { Args: { p_store_id: string; p_opening_amount: number }; Returns: CashSession };
-      fn_close_cash_session: {
-        Args: { p_session_id: string; p_closing_amount: number; p_notes: string | null };
-        Returns: CashSession;
-      };
     };
     Enums: {
       user_role: UserRole;
@@ -576,8 +531,6 @@ export type Database = {
       po_status: PoStatus;
       sale_status: SaleStatus;
       payment_type: PaymentType;
-      cash_session_status: CashSessionStatus;
-      cash_adjustment_type: CashAdjustmentType;
       tenant_plan: TenantPlan;
       tenant_status: TenantStatus;
     };
