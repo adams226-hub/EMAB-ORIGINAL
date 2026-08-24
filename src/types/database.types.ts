@@ -71,6 +71,7 @@ export type Product = {
   purchase_price: number;
   sale_price: number;
   wholesale_price: number | null;
+  receipt_code: string | null;
   image_url: string | null;
   is_active: boolean;
   created_by: string | null;

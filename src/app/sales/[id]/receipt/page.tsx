@@ -16,7 +16,7 @@ export default async function SaleReceiptPage({ params }: { params: { id: string
 
   const { data: items } = await supabase
     .from("sale_items")
-    .select("quantity, unit_price, discount_percent, line_total, products ( name, sku )")
+    .select("quantity, unit_price, discount_percent, line_total, products ( name, sku, receipt_code )")
     .eq("sale_id", params.id);
 
   const { data: store } = await supabase.from("stores").select("*").eq("id", sale.store_id).single();
@@ -26,12 +26,12 @@ export default async function SaleReceiptPage({ params }: { params: { id: string
     unit_price: number;
     discount_percent: number;
     line_total: number;
-    products: { name: string; sku: string } | null;
+    products: { name: string; sku: string; receipt_code: string | null } | null;
   };
 
   const rows = ((items ?? []) as unknown as ItemWithProduct[]).map((item, index) => ({
     id: index,
-    name: item.products?.name ?? "—",
+    name: item.products?.receipt_code || item.products?.name || "—",
     quantity: Number(item.quantity),
     unit_price: Number(item.unit_price),
     line_total: Number(item.line_total),

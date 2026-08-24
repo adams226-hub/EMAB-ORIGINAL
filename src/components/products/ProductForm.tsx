@@ -39,6 +39,7 @@ export function ProductForm({
     purchase_price: initial?.purchase_price ?? 0,
     sale_price: initial?.sale_price ?? 0,
     wholesale_price: initial?.wholesale_price ?? null,
+    receipt_code: initial?.receipt_code ?? "",
     description: initial?.description ?? "",
     initial_quantity: 0,
   });
@@ -149,6 +150,19 @@ export function ProductForm({
               setValues((v) => ({ ...v, wholesale_price: e.target.value === "" ? null : Number(e.target.value) }))
             }
           />
+        </div>
+
+        <div>
+          <Label htmlFor="receipt_code">Code sur le reçu (optionnel)</Label>
+          <Input
+            id="receipt_code"
+            value={values.receipt_code ?? ""}
+            onChange={(e) => setValues((v) => ({ ...v, receipt_code: e.target.value }))}
+            placeholder="ex: VET-014"
+          />
+          <p className="mt-1 text-xs text-slate-400">
+            Si rempli, remplace le nom réel du produit sur le reçu imprimé (discrétion, ex. produits vétérinaires).
+          </p>
         </div>
 
         {showInitialStock && (
