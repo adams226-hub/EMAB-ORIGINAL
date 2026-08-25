@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { FormError } from "@/components/ui/FormError";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency } from "@/lib/utils";
-import { groupByCategory } from "@/lib/productCategoryOrder";
+import { groupByCategory, NO_CATEGORY_LABEL } from "@/lib/productCategoryOrder";
 import type { Customer, PaymentMethod } from "@/types/database.types";
 import { createSale } from "@/app/(dashboard)/pos/actions";
 
@@ -53,6 +53,7 @@ export function POSTerminal({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [saleType, setSaleType] = useState<SaleType>("retail");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [customerId, setCustomerId] = useState("");
@@ -65,11 +66,16 @@ export function POSTerminal({
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | undefined>();
 
+  const availableCategories = useMemo(() => groupByCategory(products).map((g) => g.category), [products]);
+
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
-  }, [products, search]);
+    return products.filter((p) => {
+      if (categoryFilter && (p.category_name ?? NO_CATEGORY_LABEL) !== categoryFilter) return false;
+      if (!q) return true;
+      return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+    });
+  }, [products, search, categoryFilter]);
 
   const productGroups = useMemo(() => groupByCategory(filteredProducts), [filteredProducts]);
 
@@ -197,6 +203,32 @@ export function POSTerminal({
             className="pl-9"
             autoFocus
           />
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setCategoryFilter(null)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              categoryFilter === null
+                ? "bg-brand-600 text-white"
+                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+            }`}
+          >
+            Tous
+          </button>
+          {availableCategories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setCategoryFilter(category)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                categoryFilter === category
+                  ? "bg-brand-600 text-white"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
         </div>
 
         <div className="flex rounded-lg border border-slate-200 bg-white p-1 text-sm font-medium">
