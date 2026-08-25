@@ -14,9 +14,6 @@ export interface AnalyticalAlert {
 function daysAgoISO(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString();
 }
-function daysAgoDate(days: number): string {
-  return new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
-}
 
 /**
  * Alertes analytiques : au-delà des seuils statiques (stock bas, déjà
@@ -88,53 +85,7 @@ export async function getAnalyticalAlerts(
     }
   }
 
-  // 3. Dépense inhabituelle (7 derniers jours vs moyenne de la catégorie sur 90 jours)
-  {
-    let recentQuery = supabase
-      .from("expenses")
-      .select("amount, category_id, expense_categories ( name )")
-      .gte("expense_date", daysAgoDate(7));
-    let historyQuery = supabase
-      .from("expenses")
-      .select("amount, category_id")
-      .gte("expense_date", daysAgoDate(90))
-      .lt("expense_date", daysAgoDate(7));
-
-    if (storeId) {
-      recentQuery = recentQuery.eq("store_id", storeId);
-      historyQuery = historyQuery.eq("store_id", storeId);
-    }
-
-    const [{ data: recent }, { data: history }] = await Promise.all([recentQuery, historyQuery]);
-
-    type RecentExpense = { amount: number; category_id: string | null; expense_categories: { name: string } | null };
-    const avgByCategory = new Map<string, number>();
-    const countByCategory = new Map<string, number>();
-    for (const e of history ?? []) {
-      const key = e.category_id ?? "none";
-      avgByCategory.set(key, (avgByCategory.get(key) ?? 0) + Number(e.amount));
-      countByCategory.set(key, (countByCategory.get(key) ?? 0) + 1);
-    }
-
-    for (const e of (recent ?? []) as unknown as RecentExpense[]) {
-      const key = e.category_id ?? "none";
-      const count = countByCategory.get(key) ?? 0;
-      if (count < 3) continue; // pas assez d'historique pour comparer
-      const avg = (avgByCategory.get(key) ?? 0) / count;
-      if (avg > 0 && Number(e.amount) >= avg * 2.5) {
-        alerts.push({
-          id: `unusual-expense-${key}`,
-          severity: "warning",
-          title: "Dépense inhabituelle",
-          description: `Une dépense de la catégorie « ${e.expense_categories?.name ?? "Sans catégorie"} » dépasse largement la moyenne habituelle.`,
-          href: "/expenses",
-        });
-        break; // une seule alerte de ce type suffit
-      }
-    }
-  }
-
-  // 4. Stock dormant : produits en stock sans aucune vente depuis 60 jours
+  // 3. Stock dormant : produits en stock sans aucune vente depuis 60 jours
   {
     let stockQuery = supabase.from("product_stock").select("product_id, quantity, store_id").gt("quantity", 0);
     if (storeId) stockQuery = stockQuery.eq("store_id", storeId);

@@ -223,25 +223,6 @@ export type Customer = {
   updated_at: string;
 };
 
-export type ExpenseCategory = {
-  id: string;
-  name: string;
-  is_active: boolean;
-  created_at: string;
-};
-
-export type Expense = {
-  id: string;
-  store_id: string;
-  category_id: string | null;
-  payment_method_id: string;
-  amount: number;
-  description: string;
-  expense_date: string;
-  created_by: string | null;
-  created_at: string;
-};
-
 export type Sale = {
   id: string;
   reference: string;
@@ -449,18 +430,6 @@ export type Database = {
         Row: Customer;
         Insert: Partial<Customer>;
         Update: Partial<Customer>;
-        Relationships: [];
-      };
-      expense_categories: {
-        Row: ExpenseCategory;
-        Insert: Partial<ExpenseCategory>;
-        Update: Partial<ExpenseCategory>;
-        Relationships: [];
-      };
-      expenses: {
-        Row: Expense;
-        Insert: Partial<Expense>;
-        Update: Partial<Expense>;
         Relationships: [];
       };
       sales: {

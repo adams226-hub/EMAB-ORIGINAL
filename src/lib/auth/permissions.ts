@@ -17,7 +17,6 @@ export type ModuleKey =
   | "sales"
   | "customers"
   | "receivables"
-  | "expenses"
   | "payment_methods"
   | "financial_dashboard"
   | "financial_reports"
@@ -28,8 +27,8 @@ export type ModuleKey =
  * Matrice de permissions. Chaque module liste les rôles autorisés à y
  * accéder. La Phase 3 (ventes, finances) donne enfin un rôle concret au
  * caissier : point de vente, ventes, clients, créances.
- * Les dépenses, dettes fournisseurs et rapports restent des décisions
- * managériales (super_admin / manager).
+ * Les dettes fournisseurs et rapports restent des décisions managériales
+ * (super_admin / manager).
  */
 export const MODULE_PERMISSIONS: Record<ModuleKey, UserRole[]> = {
   dashboard: ["super_admin", "manager", "cashier", "stock_keeper"],
@@ -48,7 +47,6 @@ export const MODULE_PERMISSIONS: Record<ModuleKey, UserRole[]> = {
   sales: ["super_admin", "manager", "cashier"],
   customers: ["super_admin", "manager", "cashier"],
   receivables: ["super_admin", "manager", "cashier"],
-  expenses: ["super_admin", "manager"],
   payment_methods: ["super_admin", "manager"],
   financial_dashboard: ["super_admin", "manager"],
   financial_reports: ["super_admin", "manager"],

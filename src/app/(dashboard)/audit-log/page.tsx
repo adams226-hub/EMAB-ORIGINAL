@@ -45,7 +45,6 @@ export default async function AuditLogPage({
           <option value="products">Produits</option>
           <option value="customers">Clients</option>
           <option value="sales">Ventes</option>
-          <option value="expenses">Dépenses</option>
           <option value="stock_counts">Inventaires</option>
         </Select>
         <Button type="submit" variant="secondary">

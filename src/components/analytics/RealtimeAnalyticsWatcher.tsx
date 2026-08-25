@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 /**
- * Rafraîchit le dashboard analytique dès qu'une vente, un paiement ou une
- * dépense est enregistré ailleurs dans l'application — le pilotage reste
- * à jour sans rechargement manuel. La RLS s'applique toujours : seuls les
- * événements des lignes visibles par l'utilisateur sont reçus.
+ * Rafraîchit le dashboard analytique dès qu'une vente ou un paiement est
+ * enregistré ailleurs dans l'application — le pilotage reste à jour sans
+ * rechargement manuel. La RLS s'applique toujours : seuls les événements
+ * des lignes visibles par l'utilisateur sont reçus.
  */
 export function RealtimeAnalyticsWatcher() {
   const router = useRouter();
@@ -20,7 +20,6 @@ export function RealtimeAnalyticsWatcher() {
       .channel("analytics-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "sales" }, () => router.refresh())
       .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, () => router.refresh())
-      .on("postgres_changes", { event: "*", schema: "public", table: "expenses" }, () => router.refresh())
       .subscribe();
 
     return () => {

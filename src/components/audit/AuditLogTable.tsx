@@ -17,8 +17,6 @@ const TABLE_LABELS: Record<string, string> = {
   stock_counts: "Inventaire",
   payment_methods: "Mode de paiement",
   customers: "Client",
-  expense_categories: "Catégorie de dépense",
-  expenses: "Dépense",
   sales: "Vente",
 };
 
@@ -44,7 +42,6 @@ const FIELD_LABELS: Record<string, string> = {
   created_by: "Créé par",
   validated_by: "Validé par",
   sale_date: "Date de vente",
-  expense_date: "Date de dépense",
   created_at: "Créé le",
   updated_at: "Modifié le",
   validated_at: "Validé le",

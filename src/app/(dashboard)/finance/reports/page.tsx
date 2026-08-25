@@ -59,10 +59,6 @@ export default async function FinancialReportsPage({
             <span>Marge brute</span>
             <span>{formatCurrency(summary.grossMargin)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-slate-500">Dépenses</span>
-            <span>−{formatCurrency(summary.expensesTotal)}</span>
-          </div>
           <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-semibold text-slate-900">
             <span>Bénéfice net</span>
             <span>{formatCurrency(summary.netProfit)}</span>
@@ -70,43 +66,23 @@ export default async function FinancialReportsPage({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Rapport des ventes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-slate-500">
-              Détail de toutes les ventes de la période, avec statut de paiement — fichier Excel (.xlsx).
-            </p>
-            <a
-              href={`/api/reports/sales?${exportParams.toString()}`}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700"
-            >
-              <Download className="h-4 w-4" />
-              Télécharger Excel
-            </a>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Rapport des dépenses</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-slate-500">
-              Détail de toutes les dépenses de la période, par catégorie et mode de paiement.
-            </p>
-            <a
-              href={`/api/reports/expenses?${exportParams.toString()}`}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700"
-            >
-              <Download className="h-4 w-4" />
-              Télécharger Excel
-            </a>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Rapport des ventes</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-slate-500">
+            Détail de toutes les ventes de la période, avec statut de paiement — fichier Excel (.xlsx).
+          </p>
+          <a
+            href={`/api/reports/sales?${exportParams.toString()}`}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700"
+          >
+            <Download className="h-4 w-4" />
+            Télécharger Excel
+          </a>
+        </CardContent>
+      </Card>
 
       <p className="flex items-center gap-2 text-xs text-slate-400">
         <FileBarChart className="h-3.5 w-3.5" />

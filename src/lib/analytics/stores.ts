@@ -8,7 +8,6 @@ export interface StorePerformanceRow {
   transactions: number;
   avgTicket: number;
   cogs: number;
-  expenses: number;
   profit: number;
 }
 
@@ -16,7 +15,7 @@ export async function getStorePerformance(
   supabase: SupabaseClient<Database>,
   { from, to }: { from: string; to: string }
 ): Promise<StorePerformanceRow[]> {
-  const [{ data: stores }, { data: sales }, { data: expenses }] = await Promise.all([
+  const [{ data: stores }, { data: sales }] = await Promise.all([
     supabase.from("stores").select("id, name").eq("is_active", true).order("name"),
     supabase
       .from("sales")
@@ -24,7 +23,6 @@ export async function getStorePerformance(
       .eq("status", "completed")
       .gte("sale_date", `${from}T00:00:00`)
       .lte("sale_date", `${to}T23:59:59`),
-    supabase.from("expenses").select("store_id, amount").gte("expense_date", from).lte("expense_date", to),
   ]);
 
   const saleIds = (sales ?? []).map((s) => s.id);
@@ -37,9 +35,9 @@ export async function getStorePerformance(
     cogsBySale.set(item.sale_id, (cogsBySale.get(item.sale_id) ?? 0) + Number(item.quantity) * Number(item.unit_cost));
   }
 
-  const metrics = new Map<string, { revenue: number; transactions: number; cogs: number; expenses: number }>();
+  const metrics = new Map<string, { revenue: number; transactions: number; cogs: number }>();
   for (const store of stores ?? []) {
-    metrics.set(store.id, { revenue: 0, transactions: 0, cogs: 0, expenses: 0 });
+    metrics.set(store.id, { revenue: 0, transactions: 0, cogs: 0 });
   }
 
   for (const sale of sales ?? []) {
@@ -48,11 +46,6 @@ export async function getStorePerformance(
     entry.revenue += Number(sale.total_amount);
     entry.transactions += 1;
     entry.cogs += cogsBySale.get(sale.id) ?? 0;
-  }
-
-  for (const expense of expenses ?? []) {
-    const entry = metrics.get(expense.store_id);
-    if (entry) entry.expenses += Number(expense.amount);
   }
 
   return (stores ?? []).map((store) => {
@@ -64,8 +57,7 @@ export async function getStorePerformance(
       transactions: m.transactions,
       avgTicket: m.transactions > 0 ? Math.round((m.revenue / m.transactions) * 100) / 100 : 0,
       cogs: Math.round(m.cogs * 100) / 100,
-      expenses: Math.round(m.expenses * 100) / 100,
-      profit: Math.round((m.revenue - m.cogs - m.expenses) * 100) / 100,
+      profit: Math.round((m.revenue - m.cogs) * 100) / 100,
     };
   });
 }
