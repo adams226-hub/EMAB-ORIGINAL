@@ -35,6 +35,10 @@ export async function createSale(input: CreateSaleInput) {
     return { error: "Sélectionnez un mode de paiement" };
   }
 
+  if (!parsed.data.customer_id && (!parsed.data.walkin_name?.trim() || !parsed.data.walkin_phone?.trim())) {
+    return { error: "Le nom et le téléphone du client sont obligatoires." };
+  }
+
   const supabase = createClient();
   const { data, error } = await supabase.rpc("fn_create_sale", {
     p_store_id: parsed.data.store_id,

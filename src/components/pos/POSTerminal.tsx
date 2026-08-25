@@ -151,6 +151,10 @@ export function POSTerminal({
       setError("Sélectionnez un client pour enregistrer une vente à crédit (créance)");
       return;
     }
+    if (!customerId && (!walkinName.trim() || !walkinPhone.trim())) {
+      setError("Le nom et le téléphone du client sont obligatoires.");
+      return;
+    }
 
     startTransition(async () => {
       const result = await createSale({
@@ -362,12 +366,14 @@ export function POSTerminal({
             {!customerId && (
               <div className="grid grid-cols-2 gap-2">
                 <Input
-                  placeholder="Nom du client (optionnel)"
+                  placeholder="Nom du client"
+                  required
                   value={walkinName}
                   onChange={(e) => setWalkinName(e.target.value)}
                 />
                 <Input
-                  placeholder="Téléphone (optionnel)"
+                  placeholder="Téléphone"
+                  required
                   value={walkinPhone}
                   onChange={(e) => setWalkinPhone(e.target.value)}
                 />
