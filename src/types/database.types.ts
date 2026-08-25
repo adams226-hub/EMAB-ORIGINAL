@@ -267,6 +267,7 @@ export type SaleItem = {
   unit_price: number;
   unit_cost: number;
   discount_percent: number;
+  sale_type: "retail" | "wholesale";
   line_total: number;
 };
 

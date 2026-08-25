@@ -29,27 +29,45 @@ function columnLetter(index: number): string {
   return letters;
 }
 
+// Styles déclarés dans xl/styles.xml (cellXfs, index = ordre de déclaration) :
+// 0 = normal, 1 = normal + milliers (#,##0), 2 = gras, 3 = gras + milliers.
+const STYLE_NORMAL = 0;
+const STYLE_NUMBER = 1;
+const STYLE_BOLD = 2;
+const STYLE_BOLD_NUMBER = 3;
+
+function styleFor(numberFormat: boolean | undefined, bold: boolean): number {
+  if (bold) return numberFormat ? STYLE_BOLD_NUMBER : STYLE_BOLD;
+  return numberFormat ? STYLE_NUMBER : STYLE_NORMAL;
+}
+
 function buildSheetXml<T extends Record<string, unknown>>(
   rows: T[],
-  columns: { key: keyof T; label: string }[]
+  columns: { key: keyof T; label: string; numberFormat?: boolean }[],
+  boldRows: Set<number>
 ): string {
   const headerCells = columns
-    .map((c, i) => `<c r="${columnLetter(i)}1" t="inlineStr"><is><t>${xmlEscape(c.label)}</t></is></c>`)
+    .map(
+      (c, i) =>
+        `<c r="${columnLetter(i)}1" t="inlineStr" s="${STYLE_BOLD}"><is><t>${xmlEscape(c.label)}</t></is></c>`
+    )
     .join("");
 
   const dataRows = rows
     .map((row, r) => {
+      const bold = boldRows.has(r);
       const cells = columns
         .map((c, i) => {
           const ref = `${columnLetter(i)}${r + 2}`;
           const value = row[c.key];
+          const s = styleFor(c.numberFormat, bold);
           if (typeof value === "number" && Number.isFinite(value)) {
-            return `<c r="${ref}"><v>${value}</v></c>`;
+            return `<c r="${ref}" s="${s}"><v>${value}</v></c>`;
           }
           if (value === null || value === undefined || value === "") {
-            return `<c r="${ref}"/>`;
+            return `<c r="${ref}" s="${s}"/>`;
           }
-          return `<c r="${ref}" t="inlineStr"><is><t>${xmlEscape(value)}</t></is></c>`;
+          return `<c r="${ref}" t="inlineStr" s="${s}"><is><t>${xmlEscape(value)}</t></is></c>`;
         })
         .join("");
       return `<row r="${r + 2}">${cells}</row>`;
@@ -77,6 +95,7 @@ function contentTypesXml(sheetCount: number): string {
     '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
     '<Default Extension="xml" ContentType="application/xml"/>' +
     '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
     overrides +
     "</Types>"
   );
@@ -108,13 +127,36 @@ function workbookRelsXml(sheetCount: number): string {
       `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`
   ).join("");
 
+  const stylesRel = `<Relationship Id="rId${sheetCount + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>`;
+
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
     rels +
+    stylesRel +
     "</Relationships>"
   );
 }
+
+// numFmtId 3 = "#,##0" (format intégré OOXML) : Excel affiche le séparateur
+// de milliers propre à la locale de l'utilisateur (espace en français).
+const STYLES_XML =
+  '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+  '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+  '<fonts count="2">' +
+  '<font><sz val="11"/><name val="Calibri"/></font>' +
+  '<font><b/><sz val="11"/><name val="Calibri"/></font>' +
+  "</fonts>" +
+  '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>' +
+  '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+  '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+  '<cellXfs count="4">' +
+  '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+  '<xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+  '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+  '<xf numFmtId="3" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>' +
+  "</cellXfs>" +
+  "</styleSheet>";
 
 const CRC_TABLE = (() => {
   const table = new Uint32Array(256);
@@ -202,10 +244,19 @@ function buildZip(files: { name: string; content: string }[]): Buffer {
   return Buffer.concat([...localChunks, ...centralChunks, eocd]);
 }
 
+export interface XlsxColumn<T extends Record<string, unknown> = Record<string, unknown>> {
+  key: keyof T;
+  label: string;
+  /** Applique le format milliers (#,##0) aux valeurs numériques de cette colonne. */
+  numberFormat?: boolean;
+}
+
 export interface XlsxSheet<T extends Record<string, unknown> = Record<string, unknown>> {
   name: string;
   rows: T[];
-  columns: { key: keyof T; label: string }[];
+  columns: XlsxColumn<T>[];
+  /** Index (0-based, dans `rows`) des lignes à afficher en gras — ex. une ligne de total. */
+  boldRows?: number[];
 }
 
 /** Génère un classeur .xlsx à plusieurs feuilles à partir de lignes d'objets. */
@@ -215,9 +266,10 @@ export function toXlsxMulti(sheets: XlsxSheet[]): Buffer {
     { name: "_rels/.rels", content: ROOT_RELS_XML },
     { name: "xl/workbook.xml", content: workbookXml(sheets.map((s) => s.name)) },
     { name: "xl/_rels/workbook.xml.rels", content: workbookRelsXml(sheets.length) },
+    { name: "xl/styles.xml", content: STYLES_XML },
     ...sheets.map((s, i) => ({
       name: `xl/worksheets/sheet${i + 1}.xml`,
-      content: buildSheetXml(s.rows, s.columns),
+      content: buildSheetXml(s.rows, s.columns, new Set(s.boldRows ?? [])),
     })),
   ];
   return buildZip(files);
@@ -226,7 +278,7 @@ export function toXlsxMulti(sheets: XlsxSheet[]): Buffer {
 /** Génère un classeur .xlsx à une feuille à partir de lignes d'objets. */
 export function toXlsx<T extends Record<string, unknown>>(
   rows: T[],
-  columns: { key: keyof T; label: string }[],
+  columns: { key: keyof T; label: string; numberFormat?: boolean }[],
   sheetName = "Feuille1"
 ): Buffer {
   return toXlsxMulti([{ name: sheetName, rows, columns: columns as unknown as XlsxSheet["columns"] }]);

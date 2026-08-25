@@ -9,6 +9,7 @@ const cartItemSchema = z.object({
   quantity: z.coerce.number().positive(),
   unit_price: z.coerce.number().min(0),
   discount_percent: z.coerce.number().min(0).max(100).default(0),
+  sale_type: z.enum(["retail", "wholesale"]).default("retail"),
 });
 
 const createSaleSchema = z.object({

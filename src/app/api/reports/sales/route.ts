@@ -3,6 +3,18 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { toXlsxMulti, xlsxResponse } from "@/lib/xlsx";
 
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  paid: "Payé",
+  partial: "Partiel",
+  unpaid: "Impayé",
+  cancelled: "Annulée",
+};
+
+const SALE_TYPE_LABELS: Record<string, string> = {
+  retail: "Détail",
+  wholesale: "Gros",
+};
+
 export async function GET(request: NextRequest) {
   const profile = await requireRole(["super_admin", "manager"]);
   const supabase = createClient();
@@ -48,13 +60,6 @@ export async function GET(request: NextRequest) {
     bucket.set(p.reference_id, (bucket.get(p.reference_id) ?? 0) + Number(p.amount));
   }
 
-  const PAYMENT_STATUS_LABELS: Record<string, string> = {
-    paid: "Payé",
-    partial: "Partiel",
-    unpaid: "Impayé",
-    cancelled: "Annulée",
-  };
-
   const rows = (sales ?? []).map((s) => ({
     ...s,
     mobile_money_amount: mobileMoneyBySale.get(s.id) ?? 0,
@@ -62,11 +67,29 @@ export async function GET(request: NextRequest) {
     payment_status: PAYMENT_STATUS_LABELS[s.payment_status] ?? s.payment_status,
   }));
 
+  const salesTotalRow = {
+    reference: "TOTAL",
+    sale_date: "",
+    store_name: "",
+    customer_name: "",
+    subtotal: rows.reduce((sum, r) => sum + Number(r.subtotal), 0),
+    mobile_money_amount: rows.reduce((sum, r) => sum + Number(r.mobile_money_amount), 0),
+    cash_amount: rows.reduce((sum, r) => sum + Number(r.cash_amount), 0),
+    discount_percent: "",
+    total_amount: rows.reduce((sum, r) => sum + Number(r.total_amount), 0),
+    amount_paid: rows.reduce((sum, r) => sum + Number(r.amount_paid), 0),
+    amount_due: rows.reduce((sum, r) => sum + Number(r.amount_due), 0),
+    payment_status: "",
+  };
+  const salesRows = [...rows, salesTotalRow];
+
   const salesById = new Map((sales ?? []).map((s) => [s.id, s]));
   const { data: items } = saleIds.length
     ? await supabase
         .from("sale_items")
-        .select("sale_id, quantity, unit_price, discount_percent, line_total, products ( name, sku )")
+        .select(
+          "sale_id, quantity, unit_price, discount_percent, line_total, sale_type, products ( name, sku, categories ( name ) )"
+        )
         .in("sale_id", saleIds)
     : { data: [] };
 
@@ -76,7 +99,8 @@ export async function GET(request: NextRequest) {
     unit_price: number;
     discount_percent: number;
     line_total: number;
-    products: { name: string; sku: string } | null;
+    sale_type: string;
+    products: { name: string; sku: string; categories: { name: string } | null } | null;
   };
 
   const itemRows = ((items ?? []) as unknown as SaleItemRow[]).map((item) => {
@@ -88,6 +112,8 @@ export async function GET(request: NextRequest) {
       customer_name: sale?.customer_name ?? "",
       product_name: item.products?.name ?? "",
       sku: item.products?.sku ?? "",
+      category_name: item.products?.categories?.name ?? "—",
+      sale_type: SALE_TYPE_LABELS[item.sale_type] ?? item.sale_type,
       quantity: Number(item.quantity),
       unit_price: Number(item.unit_price),
       discount_percent: Number(item.discount_percent),
@@ -95,28 +121,46 @@ export async function GET(request: NextRequest) {
     };
   });
 
+  const itemsTotalRow = {
+    reference: "TOTAL",
+    sale_date: "",
+    store_name: "",
+    customer_name: "",
+    product_name: "",
+    sku: "",
+    category_name: "",
+    sale_type: "",
+    quantity: itemRows.reduce((sum, r) => sum + r.quantity, 0),
+    unit_price: "",
+    discount_percent: "",
+    line_total: itemRows.reduce((sum, r) => sum + r.line_total, 0),
+  };
+  const detailRows = [...itemRows, itemsTotalRow];
+
   const xlsx = toXlsxMulti([
     {
       name: "Ventes",
-      rows,
+      rows: salesRows,
+      boldRows: [salesRows.length - 1],
       columns: [
         { key: "reference", label: "Référence" },
         { key: "sale_date", label: "Date" },
         { key: "store_name", label: "Magasin" },
         { key: "customer_name", label: "Client" },
-        { key: "subtotal", label: "Sous-total" },
-        { key: "mobile_money_amount", label: "Mobile Money" },
-        { key: "cash_amount", label: "Espèces" },
+        { key: "subtotal", label: "Sous-total", numberFormat: true },
+        { key: "mobile_money_amount", label: "Mobile Money", numberFormat: true },
+        { key: "cash_amount", label: "Espèces", numberFormat: true },
         { key: "discount_percent", label: "Remise (%)" },
-        { key: "total_amount", label: "Total" },
-        { key: "amount_paid", label: "Payé" },
-        { key: "amount_due", label: "Solde dû" },
+        { key: "total_amount", label: "Total", numberFormat: true },
+        { key: "amount_paid", label: "Payé", numberFormat: true },
+        { key: "amount_due", label: "Solde dû", numberFormat: true },
         { key: "payment_status", label: "Statut" },
       ],
     },
     {
       name: "Détail articles",
-      rows: itemRows,
+      rows: detailRows,
+      boldRows: [detailRows.length - 1],
       columns: [
         { key: "reference", label: "Référence vente" },
         { key: "sale_date", label: "Date" },
@@ -124,10 +168,12 @@ export async function GET(request: NextRequest) {
         { key: "customer_name", label: "Client" },
         { key: "product_name", label: "Produit" },
         { key: "sku", label: "SKU" },
-        { key: "quantity", label: "Quantité" },
-        { key: "unit_price", label: "Prix unitaire" },
+        { key: "category_name", label: "Catégorie" },
+        { key: "sale_type", label: "Type de vente" },
+        { key: "quantity", label: "Quantité", numberFormat: true },
+        { key: "unit_price", label: "Prix unitaire", numberFormat: true },
         { key: "discount_percent", label: "Remise (%)" },
-        { key: "line_total", label: "Total ligne" },
+        { key: "line_total", label: "Total ligne", numberFormat: true },
       ],
     },
   ]);

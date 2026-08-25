@@ -163,6 +163,7 @@ export function POSTerminal({
           quantity: l.quantity,
           unit_price: l.unit_price,
           discount_percent: l.discount_percent,
+          sale_type: l.sale_type,
         })),
       });
 
