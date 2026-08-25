@@ -2,7 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { POSTerminal, type POSProduct } from "@/components/pos/POSTerminal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import type { Product } from "@/types/database.types";
 import Link from "next/link";
+
+type ProductWithCategory = Product & { categories: { name: string } | null };
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +38,7 @@ export default async function POSPage({ searchParams }: { searchParams: { store?
   }
 
   const [{ data: products }, { data: stockRows }, { data: customers }, { data: paymentMethods }] = await Promise.all([
-    supabase.from("products").select("*").eq("is_active", true).order("name"),
+    supabase.from("products").select("*, categories ( name )").eq("is_active", true).order("name"),
     supabase.from("product_stock").select("product_id, quantity").eq("store_id", storeId),
     supabase.from("customers").select("*").eq("is_active", true).order("name"),
     supabase.from("payment_methods").select("*").eq("is_active", true).order("name"),
@@ -43,13 +46,14 @@ export default async function POSPage({ searchParams }: { searchParams: { store?
 
   const stockByProduct = new Map((stockRows ?? []).map((r) => [r.product_id, Number(r.quantity)]));
 
-  const posProducts: POSProduct[] = (products ?? []).map((p) => ({
+  const posProducts: POSProduct[] = ((products ?? []) as unknown as ProductWithCategory[]).map((p) => ({
     id: p.id,
     name: p.name,
     sku: p.sku,
     sale_price: p.sale_price,
     wholesale_price: p.wholesale_price,
     unit: p.unit,
+    category_name: p.categories?.name ?? null,
     stock_quantity: stockByProduct.get(p.id) ?? 0,
   }));
 

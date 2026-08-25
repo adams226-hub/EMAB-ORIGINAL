@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { Fragment, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, Package, Search } from "lucide-react";
@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency } from "@/lib/utils";
+import { groupByCategory } from "@/lib/productCategoryOrder";
 import type { Category, Product, Store } from "@/types/database.types";
 import { ProductForm } from "./ProductForm";
 import {
@@ -53,6 +54,8 @@ export function ProductsManager({
       (p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || (p.category_name ?? "").toLowerCase().includes(q)
     );
   }, [products, search]);
+
+  const productGroups = useMemo(() => groupByCategory(filteredProducts), [filteredProducts]);
 
   function openCreate() {
     setEditing(null);
@@ -140,7 +143,6 @@ export function ProductsManager({
           <THead>
             <TR>
               <TH>Produit</TH>
-              <TH>Catégorie</TH>
               <TH>Prix de vente</TH>
               <TH>Stock total</TH>
               <TH>Statut</TH>
@@ -148,42 +150,50 @@ export function ProductsManager({
             </TR>
           </THead>
           <TBody>
-            {filteredProducts.map((product) => (
-              <TR key={product.id}>
-                <TD>
-                  <Link href={`/products/${product.id}`} className="font-medium text-slate-900 hover:text-brand-600">
-                    {product.name}
-                  </Link>
-                  <div className="text-xs text-slate-400">{product.sku}</div>
-                </TD>
-                <TD>{product.category_name ?? "—"}</TD>
-                <TD>
-                  <div>{formatCurrency(product.sale_price)}</div>
-                  {product.wholesale_price != null && (
-                    <div className="text-xs text-slate-400">Gros : {formatCurrency(product.wholesale_price)}</div>
-                  )}
-                </TD>
-                <TD>{product.total_stock.toLocaleString("fr-FR")}</TD>
-                <TD>
-                  <button onClick={() => handleToggle(product)}>
-                    <Badge tone={product.is_active ? "success" : "default"}>
-                      {product.is_active ? "Actif" : "Inactif"}
-                    </Badge>
-                  </button>
-                </TD>
-                <TD className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(product)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    {canDelete && (
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(product)}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    )}
-                  </div>
-                </TD>
-              </TR>
+            {productGroups.map(({ category, items: groupProducts }) => (
+              <Fragment key={category}>
+                <TR>
+                  <TD colSpan={5} className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {category} ({groupProducts.length})
+                  </TD>
+                </TR>
+                {groupProducts.map((product) => (
+                  <TR key={product.id}>
+                    <TD>
+                      <Link href={`/products/${product.id}`} className="font-medium text-slate-900 hover:text-brand-600">
+                        {product.name}
+                      </Link>
+                      <div className="text-xs text-slate-400">{product.sku}</div>
+                    </TD>
+                    <TD>
+                      <div>{formatCurrency(product.sale_price)}</div>
+                      {product.wholesale_price != null && (
+                        <div className="text-xs text-slate-400">Gros : {formatCurrency(product.wholesale_price)}</div>
+                      )}
+                    </TD>
+                    <TD>{product.total_stock.toLocaleString("fr-FR")}</TD>
+                    <TD>
+                      <button onClick={() => handleToggle(product)}>
+                        <Badge tone={product.is_active ? "success" : "default"}>
+                          {product.is_active ? "Actif" : "Inactif"}
+                        </Badge>
+                      </button>
+                    </TD>
+                    <TD className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(product)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        {canDelete && (
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(product)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
+                      </div>
+                    </TD>
+                  </TR>
+                ))}
+              </Fragment>
             ))}
           </TBody>
         </Table>

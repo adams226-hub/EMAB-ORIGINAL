@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { FormError } from "@/components/ui/FormError";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency } from "@/lib/utils";
+import { groupByCategory } from "@/lib/productCategoryOrder";
 import type { Customer, PaymentMethod } from "@/types/database.types";
 import { createSale } from "@/app/(dashboard)/pos/actions";
 
@@ -21,6 +22,7 @@ export interface POSProduct {
   sale_price: number;
   wholesale_price: number | null;
   unit: string;
+  category_name: string | null;
   stock_quantity: number;
 }
 
@@ -68,6 +70,8 @@ export function POSTerminal({
     if (!q) return products;
     return products.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
   }, [products, search]);
+
+  const productGroups = useMemo(() => groupByCategory(filteredProducts), [filteredProducts]);
 
   const subtotal = cart.reduce(
     (sum, line) => sum + line.quantity * line.unit_price * (1 - line.discount_percent / 100),
@@ -210,32 +214,41 @@ export function POSTerminal({
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-          {filteredProducts.map((product) => {
-            const hasWholesale = product.wholesale_price != null;
-            const price = priceFor(product, saleType);
-            return (
-              <button
-                key={product.id}
-                onClick={() => addProduct(product)}
-                className="flex flex-col items-start rounded-xl border border-slate-200 bg-white p-3 text-left shadow-card transition-colors hover:border-brand-300 hover:bg-brand-50"
-              >
-                <span className="line-clamp-2 text-sm font-medium text-slate-900">{product.name}</span>
-                <span className="mt-1 text-xs text-slate-400">{product.sku}</span>
-                <div className="mt-2 flex w-full items-center justify-between">
-                  <span className="text-sm font-semibold text-brand-600">{formatCurrency(price)}</span>
-                  <Badge tone={product.stock_quantity > 0 ? "default" : "danger"}>{product.stock_quantity} en stock</Badge>
-                </div>
-                {saleType === "wholesale" && !hasWholesale && (
-                  <span className="mt-1 text-[11px] text-amber-600">Pas de prix de gros — prix détail appliqué</span>
-                )}
-              </button>
-            );
-          })}
-          {filteredProducts.length === 0 && (
-            <div className="col-span-full">
-              <EmptyState icon={ShoppingBag} title="Aucun produit" description="Aucun résultat pour cette recherche." />
+        <div className="space-y-5">
+          {productGroups.map(({ category, items: groupProducts }) => (
+            <div key={category}>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {category} ({groupProducts.length})
+              </h2>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                {groupProducts.map((product) => {
+                  const hasWholesale = product.wholesale_price != null;
+                  const price = priceFor(product, saleType);
+                  return (
+                    <button
+                      key={product.id}
+                      onClick={() => addProduct(product)}
+                      className="flex flex-col items-start rounded-xl border border-slate-200 bg-white p-3 text-left shadow-card transition-colors hover:border-brand-300 hover:bg-brand-50"
+                    >
+                      <span className="line-clamp-2 text-sm font-medium text-slate-900">{product.name}</span>
+                      <span className="mt-1 text-xs text-slate-400">{product.sku}</span>
+                      <div className="mt-2 flex w-full items-center justify-between">
+                        <span className="text-sm font-semibold text-brand-600">{formatCurrency(price)}</span>
+                        <Badge tone={product.stock_quantity > 0 ? "default" : "danger"}>
+                          {product.stock_quantity} en stock
+                        </Badge>
+                      </div>
+                      {saleType === "wholesale" && !hasWholesale && (
+                        <span className="mt-1 text-[11px] text-amber-600">Pas de prix de gros — prix détail appliqué</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+          ))}
+          {filteredProducts.length === 0 && (
+            <EmptyState icon={ShoppingBag} title="Aucun produit" description="Aucun résultat pour cette recherche." />
           )}
         </div>
       </div>
