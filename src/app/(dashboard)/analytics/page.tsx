@@ -1,4 +1,4 @@
-import { TrendingUp, PiggyBank, Receipt, AlertTriangle, HandCoins } from "lucide-react";
+import { TrendingUp, Receipt, AlertTriangle, HandCoins } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { resolveAnalyticsFilter, type AnalyticsSearchParams } from "@/lib/analytics/resolve-filter";
@@ -60,7 +60,6 @@ export default async function AnalyticsDashboardPage({ searchParams }: { searchP
           }
         />
         <StatCard label="Transactions" value={String(trend.totalTransactions)} icon={Receipt} />
-        <StatCard label="Panier moyen" value={formatCurrency(trend.avgTicket)} icon={PiggyBank} tone="success" />
         <StatCard label="Alertes actives" value={String(alerts.length)} icon={AlertTriangle} tone={alerts.length > 0 ? "warning" : "success"} />
         <StatCard label="Créances clients" value={formatCurrency(totalReceivables)} icon={HandCoins} tone="warning" />
         <StatCard label="Produits en alerte stock" value={String(lowStock?.length ?? 0)} icon={AlertTriangle} tone="warning" />

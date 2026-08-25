@@ -8,7 +8,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { TrendChart } from "@/components/charts/TrendChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
-import { TrendingUp, Receipt, PiggyBank } from "lucide-react";
+import { TrendingUp, Receipt } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +44,7 @@ export default async function SalesAnalyticsPage({ searchParams }: { searchParam
 
       <AnalyticsFilterBar preset={filter.preset} from={filter.from} to={filter.to} stores={stores ?? []} showStore={profile.role === "super_admin"} />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatCard
           label="Chiffre d'affaires"
           value={formatCurrency(trend.totalRevenue)}
@@ -57,7 +57,6 @@ export default async function SalesAnalyticsPage({ searchParams }: { searchParam
           }
         />
         <StatCard label="Transactions" value={String(trend.totalTransactions)} icon={Receipt} />
-        <StatCard label="Panier moyen" value={formatCurrency(trend.avgTicket)} icon={PiggyBank} tone="success" />
       </div>
 
       <Card>
@@ -86,7 +85,6 @@ export default async function SalesAnalyticsPage({ searchParams }: { searchParam
                 <TH>Période</TH>
                 <TH>Transactions</TH>
                 <TH>Chiffre d&apos;affaires</TH>
-                <TH>Panier moyen</TH>
               </TR>
             </THead>
             <TBody>
@@ -95,12 +93,11 @@ export default async function SalesAnalyticsPage({ searchParams }: { searchParam
                   <TD className="font-medium text-slate-900">{p.label}</TD>
                   <TD>{p.transactions}</TD>
                   <TD>{formatCurrency(p.revenue)}</TD>
-                  <TD>{formatCurrency(p.transactions > 0 ? p.revenue / p.transactions : 0)}</TD>
                 </TR>
               ))}
               {trend.points.length === 0 && (
                 <TR>
-                  <TD colSpan={4} className="text-center text-sm text-slate-400">
+                  <TD colSpan={3} className="text-center text-sm text-slate-400">
                     Aucune vente sur cette période
                   </TD>
                 </TR>

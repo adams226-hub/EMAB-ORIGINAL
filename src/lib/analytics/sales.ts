@@ -12,7 +12,6 @@ export interface SalesTrendResult {
   points: SalesTrendPoint[];
   totalRevenue: number;
   totalTransactions: number;
-  avgTicket: number;
   previousRevenue: number;
   revenueGrowth: number | null;
 }
@@ -83,7 +82,6 @@ export async function getSalesTrend(
     points,
     totalRevenue,
     totalTransactions,
-    avgTicket: totalTransactions > 0 ? Math.round((totalRevenue / totalTransactions) * 100) / 100 : 0,
     previousRevenue,
     revenueGrowth: growthPercent(totalRevenue, previousRevenue),
   };
