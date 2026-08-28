@@ -1,4 +1,4 @@
-import { TrendingUp, Receipt, AlertTriangle, HandCoins } from "lucide-react";
+import { Download, TrendingUp, Receipt, AlertTriangle, HandCoins } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { resolveAnalyticsFilter, type AnalyticsSearchParams } from "@/lib/analytics/resolve-filter";
@@ -36,13 +36,25 @@ export default async function AnalyticsDashboardPage({ searchParams }: { searchP
   const topProducts = [...products].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
   const totalReceivables = (receivables ?? []).reduce((sum, r) => sum + Number(r.total_due), 0);
 
+  const exportParams = new URLSearchParams({ from: filter.from, to: filter.to });
+  if (filter.storeId) exportParams.set("store_id", filter.storeId);
+
   return (
     <div className="space-y-6">
       <RealtimeAnalyticsWatcher />
 
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Dashboard analytique</h1>
-        <p className="mt-1 text-sm text-slate-500">{profile.store_name ?? "Tous les magasins"} — pilotage global</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Dashboard analytique</h1>
+          <p className="mt-1 text-sm text-slate-500">{profile.store_name ?? "Tous les magasins"} — pilotage global</p>
+        </div>
+        <a
+          href={`/api/reports/sales?${exportParams.toString()}`}
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700"
+        >
+          <Download className="h-4 w-4" />
+          Télécharger le rapport (Excel)
+        </a>
       </div>
 
       <AnalyticsFilterBar preset={filter.preset} from={filter.from} to={filter.to} stores={stores ?? []} showStore={profile.role === "super_admin"} />

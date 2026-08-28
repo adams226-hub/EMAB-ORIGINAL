@@ -71,7 +71,7 @@ export function StockMovementsTable({
               {showStore && <TD>{m.store_name}</TD>}
               <TD className="font-medium">{Number(m.quantity).toLocaleString("fr-FR")}</TD>
               <TD className="text-sm text-slate-500">
-                {m.reason ?? (m.reference_type !== "manual" ? m.reference_type : "—")}
+                {m.reference ?? m.reason ?? (m.reference_type !== "manual" ? m.reference_type : "—")}
               </TD>
               <TD className="text-sm text-slate-500">{m.created_by_name ?? "—"}</TD>
               {canReverse && (

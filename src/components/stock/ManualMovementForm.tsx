@@ -57,6 +57,7 @@ export function ManualMovementForm({
 }) {
   const [direction, setDirection] = useState<"in" | "out">("in");
   const [storeId, setStoreId] = useState(fixedStoreId ?? "");
+  const [reference, setReference] = useState("");
   const [reason, setReason] = useState(
     kind === "out" ? OUT_REASONS[0].value : kind === "adjustment" ? ADJUSTMENT_REASONS[0].value : ""
   );
@@ -97,6 +98,7 @@ export function ManualMovementForm({
     onSubmit({
       type,
       store_id: storeId,
+      reference: reference || undefined,
       reason: reason || undefined,
       notes: notes || undefined,
       items: lines.map((l) => ({
@@ -134,6 +136,16 @@ export function ManualMovementForm({
           </Select>
         </div>
       )}
+
+      <div>
+        <Label htmlFor="reference">Référence</Label>
+        <Input
+          id="reference"
+          placeholder="N° bon de livraison, facture..."
+          value={reference}
+          onChange={(e) => setReference(e.target.value)}
+        />
+      </div>
 
       <div>
         <Label htmlFor="product_search">Ajouter des produits</Label>

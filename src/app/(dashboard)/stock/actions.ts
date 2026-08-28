@@ -18,6 +18,7 @@ const manualMovementLineSchema = z.object({
 const manualMovementsBulkSchema = z.object({
   type: z.enum(["in", "out", "adjustment_in", "adjustment_out"]),
   store_id: z.string().uuid("Magasin requis"),
+  reference: z.string().optional(),
   reason: z.string().optional(),
   notes: z.string().optional(),
   items: z.array(manualMovementLineSchema).min(1, "Ajoutez au moins un produit"),
@@ -41,6 +42,7 @@ export async function createManualMovementsBulk(input: ManualMovementsBulkInput)
     store_id: parsed.data.store_id,
     quantity: item.quantity,
     unit_cost: item.unit_cost ?? null,
+    reference: parsed.data.reference || null,
     reason: parsed.data.reason || null,
     notes: parsed.data.notes || null,
     reference_type: "manual",

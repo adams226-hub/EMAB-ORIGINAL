@@ -137,6 +137,7 @@ export type StockMovement = {
   unit_cost: number | null;
   reference_type: MovementReferenceType;
   reference_id: string | null;
+  reference: string | null;
   reason: string | null;
   notes: string | null;
   reversal_of: string | null;
@@ -156,6 +157,7 @@ export type StockMovementDetail = {
   unit_cost: number | null;
   reference_type: MovementReferenceType;
   reference_id: string | null;
+  reference: string | null;
   reason: string | null;
   notes: string | null;
   reversal_of: string | null;
