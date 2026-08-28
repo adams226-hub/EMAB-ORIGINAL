@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormError } from "@/components/ui/FormError";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Modal } from "@/components/ui/Modal";
 import { formatCurrency } from "@/lib/utils";
 import { groupByCategory, NO_CATEGORY_LABEL } from "@/lib/productCategoryOrder";
 import type { Customer, PaymentMethod } from "@/types/database.types";
@@ -65,6 +66,7 @@ export function POSTerminal({
   const [amountPaidTouched, setAmountPaidTouched] = useState(false);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | undefined>();
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const availableCategories = useMemo(() => groupByCategory(products).map((g) => g.category), [products]);
 
@@ -146,7 +148,7 @@ export function POSTerminal({
     setNotes("");
   }
 
-  function handleSubmit() {
+  function openPreview() {
     setError(undefined);
 
     if (cart.length === 0) {
@@ -157,11 +159,15 @@ export function POSTerminal({
       setError("Sélectionnez un client pour enregistrer une vente à crédit (créance)");
       return;
     }
-    if (!customerId && (!walkinName.trim() || !walkinPhone.trim())) {
-      setError("Le nom et le téléphone du client sont obligatoires.");
+    if (!customerId && !walkinName.trim() && !walkinPhone.trim()) {
+      setError("Renseignez au moins le nom ou le téléphone du client.");
       return;
     }
 
+    setPreviewOpen(true);
+  }
+
+  function confirmSale() {
     startTransition(async () => {
       const result = await createSale({
         store_id: storeId,
@@ -182,10 +188,12 @@ export function POSTerminal({
       });
 
       if (result.error) {
+        setPreviewOpen(false);
         setError(result.error);
         return;
       }
 
+      setPreviewOpen(false);
       resetSale();
       router.push(`/sales/${result.saleId}/receipt`);
     });
@@ -399,13 +407,11 @@ export function POSTerminal({
               <div className="grid grid-cols-2 gap-2">
                 <Input
                   placeholder="Nom du client"
-                  required
                   value={walkinName}
                   onChange={(e) => setWalkinName(e.target.value)}
                 />
                 <Input
                   placeholder="Téléphone"
-                  required
                   value={walkinPhone}
                   onChange={(e) => setWalkinPhone(e.target.value)}
                 />
@@ -441,11 +447,98 @@ export function POSTerminal({
             )}
           </div>
 
-          <Button className="w-full" size="lg" onClick={handleSubmit} disabled={isPending || cart.length === 0}>
-            {isPending ? "Traitement..." : `Valider la vente — ${formatCurrency(total)}`}
+          <Button className="w-full" size="lg" onClick={openPreview} disabled={isPending || cart.length === 0}>
+            {`Aperçu de la vente — ${formatCurrency(total)}`}
           </Button>
         </CardContent>
       </Card>
+
+      <Modal open={previewOpen} onClose={() => setPreviewOpen(false)} title="Aperçu de la vente">
+        <div className="space-y-4">
+          <FormError message={error} />
+
+          <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-slate-100 p-2">
+            {cart.map((line) => (
+              <div key={`${line.product_id}-${line.sale_type}`} className="flex items-center justify-between text-sm">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-900">
+                    {line.name}
+                    {line.sale_type === "wholesale" && (
+                      <Badge tone="default" className="ml-2">
+                        Gros
+                      </Badge>
+                    )}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {line.quantity} x {formatCurrency(line.unit_price)}
+                    {line.discount_percent > 0 && ` (-${line.discount_percent}%)`}
+                  </p>
+                </div>
+                <span className="font-semibold text-slate-900">
+                  {formatCurrency(line.quantity * line.unit_price * (1 - line.discount_percent / 100))}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-1.5 border-t border-slate-100 pt-3 text-sm">
+            <div className="flex justify-between text-slate-500">
+              <span>Sous-total</span>
+              <span>{formatCurrency(subtotal)}</span>
+            </div>
+            {globalDiscount > 0 && (
+              <div className="flex justify-between text-slate-500">
+                <span>Remise globale</span>
+                <span>{globalDiscount}%</span>
+              </div>
+            )}
+            <div className="flex justify-between text-base font-semibold text-slate-900">
+              <span>Total</span>
+              <span>{formatCurrency(total)}</span>
+            </div>
+            <div className="flex justify-between text-slate-500">
+              <span>Payé</span>
+              <span>{formatCurrency(effectiveAmountPaid)}</span>
+            </div>
+            {effectiveAmountPaid < total && (
+              <div className="flex justify-between font-medium text-amber-600">
+                <span>Solde dû (créance)</span>
+                <span>{formatCurrency(total - effectiveAmountPaid)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-slate-100 pt-3 text-sm text-slate-500">
+            <p>
+              Client :{" "}
+              <span className="font-medium text-slate-900">
+                {customerId
+                  ? customers.find((c) => c.id === customerId)?.name ?? "—"
+                  : walkinName || walkinPhone
+                    ? [walkinName, walkinPhone].filter(Boolean).join(" · ")
+                    : "Client de passage"}
+              </span>
+            </p>
+            {effectiveAmountPaid > 0 && (
+              <p>
+                Paiement :{" "}
+                <span className="font-medium text-slate-900">
+                  {paymentMethods.find((m) => m.id === paymentMethodId)?.name ?? "—"}
+                </span>
+              </p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setPreviewOpen(false)} disabled={isPending}>
+              Modifier
+            </Button>
+            <Button onClick={confirmSale} disabled={isPending}>
+              {isPending ? "Traitement..." : "Confirmer la vente"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

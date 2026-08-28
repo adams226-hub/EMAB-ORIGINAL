@@ -35,8 +35,8 @@ export async function createSale(input: CreateSaleInput) {
     return { error: "Sélectionnez un mode de paiement" };
   }
 
-  if (!parsed.data.customer_id && (!parsed.data.walkin_name?.trim() || !parsed.data.walkin_phone?.trim())) {
-    return { error: "Le nom et le téléphone du client sont obligatoires." };
+  if (!parsed.data.customer_id && !parsed.data.walkin_name?.trim() && !parsed.data.walkin_phone?.trim()) {
+    return { error: "Renseignez au moins le nom ou le téléphone du client." };
   }
 
   const supabase = createClient();
