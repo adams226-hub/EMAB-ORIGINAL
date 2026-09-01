@@ -47,9 +47,9 @@ export const MODULE_PERMISSIONS: Record<ModuleKey, UserRole[]> = {
   sales: ["super_admin", "manager", "cashier"],
   customers: ["super_admin", "manager", "cashier"],
   receivables: ["super_admin", "manager", "cashier"],
-  payment_methods: ["super_admin", "manager"],
-  financial_dashboard: ["super_admin", "manager"],
-  financial_reports: ["super_admin", "manager"],
+  payment_methods: ["super_admin"],
+  financial_dashboard: ["super_admin"],
+  financial_reports: ["super_admin"],
   analytics: ["super_admin", "manager"],
   audit_log: ["super_admin"],
 };

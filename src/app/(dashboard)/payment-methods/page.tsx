@@ -5,10 +5,10 @@ import { PaymentMethodsManager } from "@/components/payment-methods/PaymentMetho
 export const dynamic = "force-dynamic";
 
 export default async function PaymentMethodsPage() {
-  const profile = await requireRole(["super_admin", "manager"]);
+  await requireRole(["super_admin"]);
   const supabase = createClient();
 
   const { data: methods } = await supabase.from("payment_methods").select("*").order("name");
 
-  return <PaymentMethodsManager methods={methods ?? []} canDelete={profile.role === "super_admin"} />;
+  return <PaymentMethodsManager methods={methods ?? []} canDelete />;
 }

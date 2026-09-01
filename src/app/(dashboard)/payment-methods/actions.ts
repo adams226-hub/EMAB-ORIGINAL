@@ -12,7 +12,7 @@ const methodSchema = z.object({
 
 export type PaymentMethodInput = z.infer<typeof methodSchema>;
 
-const WRITE_ROLES = ["super_admin", "manager"] as const;
+const WRITE_ROLES = ["super_admin"] as const;
 
 export async function createPaymentMethod(input: PaymentMethodInput) {
   await requireRole([...WRITE_ROLES]);
@@ -56,7 +56,7 @@ export async function deletePaymentMethod(id: string) {
   if (error) {
     return {
       error: error.message.includes("foreign key")
-        ? "Impossible de supprimer : ce mode de paiement est utilisé par des paiements ou dépenses."
+        ? "Impossible de supprimer : ce mode de paiement est utilisé par des paiements enregistrés."
         : error.message,
     };
   }

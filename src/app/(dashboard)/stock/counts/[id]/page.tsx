@@ -17,7 +17,7 @@ export default async function StockCountDetailPage({ params }: { params: { id: s
   const [{ data: items }, { data: store }] = await Promise.all([
     supabase
       .from("stock_count_items")
-      .select("product_id, expected_quantity, counted_quantity, products ( name, sku )")
+      .select("product_id, expected_quantity, counted_quantity, products ( name, sku, categories ( name ) )")
       .eq("stock_count_id", params.id),
     supabase.from("stores").select("name").eq("id", count.store_id).single(),
   ]);
@@ -26,7 +26,7 @@ export default async function StockCountDetailPage({ params }: { params: { id: s
     product_id: string;
     expected_quantity: number;
     counted_quantity: number | null;
-    products: { name: string; sku: string } | null;
+    products: { name: string; sku: string; categories: { name: string } | null } | null;
   };
 
   const rows: CountItemRow[] = ((items ?? []) as unknown as ItemWithProduct[]).map((item) => ({
@@ -35,6 +35,7 @@ export default async function StockCountDetailPage({ params }: { params: { id: s
     counted_quantity: item.counted_quantity === null ? null : Number(item.counted_quantity),
     product_name: item.products?.name ?? "—",
     sku: item.products?.sku ?? "—",
+    category_name: item.products?.categories?.name ?? null,
   }));
 
   const isSuperAdmin = profile.role === "super_admin";

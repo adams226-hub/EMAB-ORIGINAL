@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Save, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
 import { CountStatusBadge } from "./CountStatusBadge";
 import { formatDate } from "@/lib/utils";
+import { groupByCategory } from "@/lib/productCategoryOrder";
 import type { StockCount } from "@/types/database.types";
 import { updateCountItem, submitStockCount, validateStockCount } from "@/app/(dashboard)/stock/counts/actions";
 
@@ -17,6 +18,7 @@ export interface CountItemRow {
   product_id: string;
   product_name: string;
   sku: string;
+  category_name: string | null;
   expected_quantity: number;
   counted_quantity: number | null;
 }
@@ -42,6 +44,13 @@ export function CountDetail({
     Object.fromEntries(items.map((i) => [i.product_id, i.counted_quantity?.toString() ?? ""]))
   );
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
+  const availableCategories = useMemo(() => groupByCategory(items).map((g) => g.category), [items]);
+  const filteredItems = useMemo(
+    () => (categoryFilter ? items.filter((i) => (i.category_name ?? "Sans catégorie") === categoryFilter) : items),
+    [items, categoryFilter]
+  );
 
   function handleSave(productId: string) {
     const value = draft[productId];
@@ -106,6 +115,32 @@ export function CountDetail({
           </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => setCategoryFilter(null)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                categoryFilter === null
+                  ? "bg-brand-600 text-white"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              Tous ({items.length})
+            </button>
+            {availableCategories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setCategoryFilter(category)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  categoryFilter === category
+                    ? "bg-brand-600 text-white"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
           <Table>
             <THead>
               <TR>
@@ -117,7 +152,7 @@ export function CountDetail({
               </TR>
             </THead>
             <TBody>
-              {items.map((item) => {
+              {filteredItems.map((item) => {
                 const counted = draft[item.product_id] === "" ? null : Number(draft[item.product_id]);
                 const diff = counted === null ? null : counted - item.expected_quantity;
                 return (
