@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { AuditLogTable } from "@/components/audit/AuditLogTable";
 import { Select } from "@/components/ui/Select";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +13,7 @@ const PAGE_SIZE = 50;
 export default async function AuditLogPage({
   searchParams,
 }: {
-  searchParams: { table?: string; page?: string };
+  searchParams: { table?: string; from?: string; to?: string; page?: string };
 }) {
   await requireRole(["super_admin"]);
   const supabase = createClient();
@@ -26,6 +28,8 @@ export default async function AuditLogPage({
     .range(offset, offset + PAGE_SIZE - 1);
 
   if (searchParams.table) query = query.eq("table_name", searchParams.table);
+  if (searchParams.from) query = query.gte("created_at", `${searchParams.from}T00:00:00`);
+  if (searchParams.to) query = query.lte("created_at", `${searchParams.to}T23:59:59`);
 
   const { data: entries, count } = await query;
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
@@ -47,6 +51,18 @@ export default async function AuditLogPage({
           <option value="sales">Ventes</option>
           <option value="stock_counts">Inventaires</option>
         </Select>
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="from" className="text-sm font-normal text-slate-500">
+            Du
+          </Label>
+          <Input id="from" name="from" type="date" defaultValue={searchParams.from ?? ""} className="w-40" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="to" className="text-sm font-normal text-slate-500">
+            Au
+          </Label>
+          <Input id="to" name="to" type="date" defaultValue={searchParams.to ?? ""} className="w-40" />
+        </div>
         <Button type="submit" variant="secondary">
           Filtrer
         </Button>
