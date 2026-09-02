@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/Label";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormError";
-import { ROLE_LABELS } from "@/lib/auth/permissions";
+import { ROLE_LABELS, CREATABLE_ROLES } from "@/lib/auth/permissions";
 import type { Profile, Store, UserRole } from "@/types/database.types";
 
 export interface UserFormValues {
@@ -36,11 +36,14 @@ export function UserForm({
     full_name: initial?.full_name ?? "",
     email: initial?.email ?? "",
     password: "",
-    role: initial?.role ?? "cashier",
+    role: initial?.role ?? "manager",
     store_id: initial?.store_id ?? "",
   });
 
   const needsStore = values.role !== "super_admin";
+
+  const availableRoles =
+    initial && !CREATABLE_ROLES.includes(initial.role) ? [initial.role, ...CREATABLE_ROLES] : CREATABLE_ROLES;
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -95,7 +98,7 @@ export function UserForm({
           value={values.role}
           onChange={(e) => setValues((v) => ({ ...v, role: e.target.value as UserRole }))}
         >
-          {(Object.keys(ROLE_LABELS) as UserRole[]).map((role) => (
+          {availableRoles.map((role) => (
             <option key={role} value={role}>
               {ROLE_LABELS[role]}
             </option>

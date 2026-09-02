@@ -68,6 +68,13 @@ export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   stock_keeper: "Accès à la gestion du stock et des produits",
 };
 
+/**
+ * Rôles disponibles à la création d'un nouveau compte. Caissier et
+ * Magasinier ne sont plus proposés (rôle Gérant consolidé) — les comptes
+ * existants avec ces rôles restent fonctionnels et modifiables.
+ */
+export const CREATABLE_ROLES: UserRole[] = ["super_admin", "manager"];
+
 export function canAccessModule(role: UserRole, module: ModuleKey): boolean {
   return MODULE_PERMISSIONS[module]?.includes(role) ?? false;
 }
