@@ -47,7 +47,7 @@ const FIELD_LABELS: Record<string, string> = {
   validated_at: "Validé le",
   trial_ends_at: "Fin de l'essai",
   subtotal: "Sous-total",
-  discount_percent: "Remise (%)",
+  discount_amount: "Remise (FCFA)",
   total_amount: "Montant total",
   amount_paid: "Montant payé",
   amount_due: "Solde dû",

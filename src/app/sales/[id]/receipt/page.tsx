@@ -16,7 +16,7 @@ export default async function SaleReceiptPage({ params }: { params: { id: string
 
   const { data: items } = await supabase
     .from("sale_items")
-    .select("quantity, unit_price, discount_percent, line_total, products ( name, sku, receipt_code )")
+    .select("quantity, unit_price, discount_amount, line_total, products ( name, sku, receipt_code )")
     .eq("sale_id", params.id);
 
   const { data: store } = await supabase.from("stores").select("*").eq("id", sale.store_id).single();
@@ -24,7 +24,7 @@ export default async function SaleReceiptPage({ params }: { params: { id: string
   type ItemWithProduct = {
     quantity: number;
     unit_price: number;
-    discount_percent: number;
+    discount_amount: number;
     line_total: number;
     products: { name: string; sku: string; receipt_code: string | null } | null;
   };
@@ -88,10 +88,10 @@ export default async function SaleReceiptPage({ params }: { params: { id: string
             <span>Sous-total</span>
             <span>{formatCurrency(sale.subtotal)}</span>
           </div>
-          {sale.discount_percent > 0 && (
+          {sale.discount_amount > 0 && (
             <div className="flex justify-between">
               <span>Remise</span>
-              <span>{sale.discount_percent}%</span>
+              <span>{formatCurrency(sale.discount_amount)}</span>
             </div>
           )}
           <div className="flex justify-between text-base font-bold">

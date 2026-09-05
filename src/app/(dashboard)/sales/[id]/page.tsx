@@ -15,7 +15,7 @@ export default async function SaleDetailPage({ params }: { params: { id: string 
   if (!sale) notFound();
 
   const [{ data: items }, { data: payments }, { data: paymentMethods }] = await Promise.all([
-    supabase.from("sale_items").select("id, quantity, unit_price, discount_percent, line_total, products ( name, sku )").eq("sale_id", params.id),
+    supabase.from("sale_items").select("id, quantity, unit_price, discount_amount, line_total, products ( name, sku )").eq("sale_id", params.id),
     supabase
       .from("payments")
       .select("id, amount, payment_date, payment_methods ( name ), profiles ( full_name )")
@@ -29,7 +29,7 @@ export default async function SaleDetailPage({ params }: { params: { id: string 
     id: string;
     quantity: number;
     unit_price: number;
-    discount_percent: number;
+    discount_amount: number;
     line_total: number;
     products: { name: string; sku: string } | null;
   };
@@ -48,7 +48,7 @@ export default async function SaleDetailPage({ params }: { params: { id: string 
     sku: item.products?.sku ?? "—",
     quantity: Number(item.quantity),
     unit_price: Number(item.unit_price),
-    discount_percent: Number(item.discount_percent),
+    discount_amount: Number(item.discount_amount),
     line_total: Number(item.line_total),
   }));
 

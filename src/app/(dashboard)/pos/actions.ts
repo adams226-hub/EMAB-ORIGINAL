@@ -8,14 +8,14 @@ const cartItemSchema = z.object({
   product_id: z.string().uuid(),
   quantity: z.coerce.number().positive(),
   unit_price: z.coerce.number().min(0),
-  discount_percent: z.coerce.number().min(0).max(100).default(0),
+  discount_amount: z.coerce.number().min(0).default(0),
   sale_type: z.enum(["retail", "wholesale"]).default("retail"),
 });
 
 const createSaleSchema = z.object({
   store_id: z.string().uuid("Magasin requis"),
   customer_id: z.string().uuid().optional().nullable(),
-  discount_percent: z.coerce.number().min(0).max(100).default(0),
+  discount_amount: z.coerce.number().min(0).default(0),
   payment_method_id: z.string().uuid().optional().nullable(),
   amount_paid: z.coerce.number().min(0),
   notes: z.string().optional(),
@@ -43,7 +43,7 @@ export async function createSale(input: CreateSaleInput) {
   const { data, error } = await supabase.rpc("fn_create_sale", {
     p_store_id: parsed.data.store_id,
     p_customer_id: parsed.data.customer_id || null,
-    p_discount_percent: parsed.data.discount_percent,
+    p_discount_amount: parsed.data.discount_amount,
     p_payment_method_id: parsed.data.payment_method_id || null,
     p_amount_paid: parsed.data.amount_paid,
     p_notes: parsed.data.notes || null,

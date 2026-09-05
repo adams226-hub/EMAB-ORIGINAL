@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     subtotal: rows.reduce((sum, r) => sum + Number(r.subtotal), 0),
     mobile_money_amount: rows.reduce((sum, r) => sum + Number(r.mobile_money_amount), 0),
     cash_amount: rows.reduce((sum, r) => sum + Number(r.cash_amount), 0),
-    discount_percent: "",
+    discount_amount: rows.reduce((sum, r) => sum + Number(r.discount_amount), 0),
     total_amount: rows.reduce((sum, r) => sum + Number(r.total_amount), 0),
     amount_paid: rows.reduce((sum, r) => sum + Number(r.amount_paid), 0),
     amount_due: rows.reduce((sum, r) => sum + Number(r.amount_due), 0),
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     ? await supabase
         .from("sale_items")
         .select(
-          "sale_id, quantity, unit_price, discount_percent, line_total, sale_type, products ( name, sku, categories ( name ) )"
+          "sale_id, quantity, unit_price, discount_amount, line_total, sale_type, products ( name, sku, categories ( name ) )"
         )
         .in("sale_id", saleIds)
     : { data: [] };
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
     sale_id: string;
     quantity: number;
     unit_price: number;
-    discount_percent: number;
+    discount_amount: number;
     line_total: number;
     sale_type: string;
     products: { name: string; sku: string; categories: { name: string } | null } | null;
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
       sale_type: SALE_TYPE_LABELS[item.sale_type] ?? item.sale_type,
       quantity: Number(item.quantity),
       unit_price: Number(item.unit_price),
-      discount_percent: Number(item.discount_percent),
+      discount_amount: Number(item.discount_amount),
       line_total: Number(item.line_total),
     };
   });
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
     sale_type: "",
     quantity: itemRows.reduce((sum, r) => sum + r.quantity, 0),
     unit_price: "",
-    discount_percent: "",
+    discount_amount: itemRows.reduce((sum, r) => sum + r.discount_amount, 0),
     line_total: itemRows.reduce((sum, r) => sum + r.line_total, 0),
   };
   const detailRows = [...itemRows, itemsTotalRow];
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
         { key: "subtotal", label: "Sous-total", numberFormat: true },
         { key: "mobile_money_amount", label: "Mobile Money", numberFormat: true },
         { key: "cash_amount", label: "Espèces", numberFormat: true },
-        { key: "discount_percent", label: "Remise (%)" },
+        { key: "discount_amount", label: "Remise (FCFA)", numberFormat: true },
         { key: "total_amount", label: "Total", numberFormat: true },
         { key: "amount_paid", label: "Payé", numberFormat: true },
         { key: "amount_due", label: "Solde dû", numberFormat: true },
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
         { key: "sale_type", label: "Type de vente" },
         { key: "quantity", label: "Quantité", numberFormat: true },
         { key: "unit_price", label: "Prix unitaire", numberFormat: true },
-        { key: "discount_percent", label: "Remise (%)" },
+        { key: "discount_amount", label: "Remise (FCFA)", numberFormat: true },
         { key: "line_total", label: "Total ligne", numberFormat: true },
       ],
     },

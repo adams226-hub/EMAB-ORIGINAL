@@ -19,7 +19,7 @@ export interface SaleItemRow {
   sku: string;
   quantity: number;
   unit_price: number;
-  discount_percent: number;
+  discount_amount: number;
   line_total: number;
 }
 
@@ -118,7 +118,7 @@ export function SaleDetail({
                     </TD>
                     <TD>{item.quantity}</TD>
                     <TD>{formatCurrency(item.unit_price)}</TD>
-                    <TD>{item.discount_percent > 0 ? `${item.discount_percent}%` : "—"}</TD>
+                    <TD>{item.discount_amount > 0 ? formatCurrency(item.discount_amount) : "—"}</TD>
                     <TD className="font-medium">{formatCurrency(item.line_total)}</TD>
                   </TR>
                 ))}
@@ -138,7 +138,7 @@ export function SaleDetail({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Remise globale</span>
-              <span>{sale.discount_percent}%</span>
+              <span>{formatCurrency(sale.discount_amount)}</span>
             </div>
             <div className="flex justify-between text-base font-semibold text-slate-900">
               <span>Total</span>

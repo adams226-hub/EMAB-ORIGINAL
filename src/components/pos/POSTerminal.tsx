@@ -36,7 +36,7 @@ interface CartLine {
   unit_price: number;
   sale_type: SaleType;
   quantity: number;
-  discount_percent: number;
+  discount_amount: number;
   available_stock: number;
 }
 
@@ -61,11 +61,12 @@ export function POSTerminal({
   const [walkinName, setWalkinName] = useState("");
   const [walkinPhone, setWalkinPhone] = useState("");
   const [paymentMethodId, setPaymentMethodId] = useState(paymentMethods[0]?.id ?? "");
-  const [globalDiscount, setGlobalDiscount] = useState(0);
+  const [globalDiscountAmount, setGlobalDiscountAmount] = useState(0);
   const [amountPaid, setAmountPaid] = useState<string>("");
   const [amountPaidTouched, setAmountPaidTouched] = useState(false);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | undefined>();
+  const [successMessage, setSuccessMessage] = useState<string | undefined>();
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const availableCategories = useMemo(() => groupByCategory(products).map((g) => g.category), [products]);
@@ -82,10 +83,10 @@ export function POSTerminal({
   const productGroups = useMemo(() => groupByCategory(filteredProducts), [filteredProducts]);
 
   const subtotal = cart.reduce(
-    (sum, line) => sum + line.quantity * line.unit_price * (1 - line.discount_percent / 100),
+    (sum, line) => sum + (line.quantity * line.unit_price - line.discount_amount),
     0
   );
-  const total = Math.round(subtotal * (1 - globalDiscount / 100) * 100) / 100;
+  const total = Math.max(0, Math.round((subtotal - globalDiscountAmount) * 100) / 100);
   const effectiveAmountPaid = amountPaidTouched ? Number(amountPaid || 0) : total;
 
   function priceFor(product: POSProduct, type: SaleType) {
@@ -110,7 +111,7 @@ export function POSTerminal({
           unit_price,
           sale_type: saleType,
           quantity: 1,
-          discount_percent: 0,
+          discount_amount: 0,
           available_stock: product.stock_quantity,
         },
       ];
@@ -127,9 +128,9 @@ export function POSTerminal({
     );
   }
 
-  function updateDiscount(productId: string, saleTypeKey: SaleType, discount_percent: number) {
+  function updateDiscount(productId: string, saleTypeKey: SaleType, discount_amount: number) {
     setCart((lines) =>
-      lines.map((l) => (l.product_id === productId && l.sale_type === saleTypeKey ? { ...l, discount_percent } : l))
+      lines.map((l) => (l.product_id === productId && l.sale_type === saleTypeKey ? { ...l, discount_amount } : l))
     );
   }
 
@@ -142,7 +143,7 @@ export function POSTerminal({
     setCustomerId("");
     setWalkinName("");
     setWalkinPhone("");
-    setGlobalDiscount(0);
+    setGlobalDiscountAmount(0);
     setAmountPaid("");
     setAmountPaidTouched(false);
     setNotes("");
@@ -150,6 +151,7 @@ export function POSTerminal({
 
   function openPreview() {
     setError(undefined);
+    setSuccessMessage(undefined);
 
     if (cart.length === 0) {
       setError("Le panier est vide");
@@ -172,7 +174,7 @@ export function POSTerminal({
       const result = await createSale({
         store_id: storeId,
         customer_id: customerId || null,
-        discount_percent: globalDiscount,
+        discount_amount: globalDiscountAmount,
         payment_method_id: effectiveAmountPaid > 0 ? paymentMethodId : null,
         amount_paid: effectiveAmountPaid,
         notes: notes || undefined,
@@ -182,7 +184,7 @@ export function POSTerminal({
           product_id: l.product_id,
           quantity: l.quantity,
           unit_price: l.unit_price,
-          discount_percent: l.discount_percent,
+          discount_amount: l.discount_amount,
           sale_type: l.sale_type,
         })),
       });
@@ -195,7 +197,10 @@ export function POSTerminal({
 
       setPreviewOpen(false);
       resetSale();
-      router.push(`/sales/${result.saleId}/receipt`);
+      setSuccessMessage(
+        "Vente enregistrée avec succès. Pour imprimer le reçu, allez dans Ventes, sélectionnez la vente et cliquez sur Imprimer."
+      );
+      router.refresh();
     });
   }
 
@@ -303,6 +308,11 @@ export function POSTerminal({
         </CardHeader>
         <CardContent className="space-y-4">
           <FormError message={error} />
+          {successMessage && (
+            <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+              {successMessage}
+            </div>
+          )}
 
           <div className="max-h-64 space-y-3 overflow-y-auto">
             {cart.length === 0 ? (
@@ -351,20 +361,19 @@ export function POSTerminal({
                       </Button>
                     </div>
                     <span className="text-sm font-semibold text-slate-900">
-                      {formatCurrency(line.quantity * line.unit_price * (1 - line.discount_percent / 100))}
+                      {formatCurrency(line.quantity * line.unit_price - line.discount_amount)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
-                    Remise ligne
+                    Remise ligne (FCFA)
                     <Input
                       type="number"
                       min={0}
-                      max={100}
-                      value={line.discount_percent}
+                      max={line.quantity * line.unit_price}
+                      value={line.discount_amount}
                       onChange={(e) => updateDiscount(line.product_id, line.sale_type, Number(e.target.value))}
-                      className="h-6 w-14 text-xs"
+                      className="h-6 w-20 text-xs"
                     />
-                    %
                   </div>
                 </div>
               ))
@@ -377,14 +386,14 @@ export function POSTerminal({
               <span>{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-500">Remise globale (%)</span>
+              <span className="text-slate-500">Remise globale (FCFA)</span>
               <Input
                 type="number"
                 min={0}
-                max={100}
-                value={globalDiscount}
-                onChange={(e) => setGlobalDiscount(Number(e.target.value))}
-                className="h-8 w-20 text-right"
+                max={subtotal}
+                value={globalDiscountAmount}
+                onChange={(e) => setGlobalDiscountAmount(Number(e.target.value))}
+                className="h-8 w-24 text-right"
               />
             </div>
             <div className="flex justify-between text-base font-semibold text-slate-900">
@@ -471,11 +480,11 @@ export function POSTerminal({
                   </p>
                   <p className="text-xs text-slate-400">
                     {line.quantity} x {formatCurrency(line.unit_price)}
-                    {line.discount_percent > 0 && ` (-${line.discount_percent}%)`}
+                    {line.discount_amount > 0 && ` (-${formatCurrency(line.discount_amount)})`}
                   </p>
                 </div>
                 <span className="font-semibold text-slate-900">
-                  {formatCurrency(line.quantity * line.unit_price * (1 - line.discount_percent / 100))}
+                  {formatCurrency(line.quantity * line.unit_price - line.discount_amount)}
                 </span>
               </div>
             ))}
@@ -486,10 +495,10 @@ export function POSTerminal({
               <span>Sous-total</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
-            {globalDiscount > 0 && (
+            {globalDiscountAmount > 0 && (
               <div className="flex justify-between text-slate-500">
                 <span>Remise globale</span>
-                <span>{globalDiscount}%</span>
+                <span>{formatCurrency(globalDiscountAmount)}</span>
               </div>
             )}
             <div className="flex justify-between text-base font-semibold text-slate-900">

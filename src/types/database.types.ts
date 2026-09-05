@@ -233,7 +233,7 @@ export type Sale = {
   sold_by: string | null;
   sale_date: string;
   subtotal: number;
-  discount_percent: number;
+  discount_amount: number;
   total_amount: number;
   amount_paid: number;
   amount_due: number;
@@ -249,7 +249,7 @@ export type SaleItem = {
   quantity: number;
   unit_price: number;
   unit_cost: number;
-  discount_percent: number;
+  discount_amount: number;
   sale_type: "retail" | "wholesale";
   line_total: number;
 };
@@ -278,7 +278,7 @@ export type SaleDetail = {
   sold_by_name: string | null;
   sale_date: string;
   subtotal: number;
-  discount_percent: number;
+  discount_amount: number;
   total_amount: number;
   amount_paid: number;
   amount_due: number;
@@ -476,11 +476,11 @@ export type Database = {
         Args: {
           p_store_id: string;
           p_customer_id: string | null;
-          p_discount_percent: number;
+          p_discount_amount: number;
           p_payment_method_id: string | null;
           p_amount_paid: number;
           p_notes: string | null;
-          p_items: { product_id: string; quantity: number; unit_price: number; discount_percent?: number }[];
+          p_items: { product_id: string; quantity: number; unit_price: number; discount_amount?: number }[];
         };
         Returns: Sale;
       };
