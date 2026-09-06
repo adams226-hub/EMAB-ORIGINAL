@@ -38,7 +38,7 @@ export default async function SaleReceiptPage({ params }: { params: { id: string
   }));
 
   return (
-    <div className="mx-auto min-h-screen max-w-sm bg-slate-100 px-4 py-8 print:bg-white print:py-0">
+    <div className="mx-auto min-h-screen max-w-sm bg-slate-100 px-4 py-8 print:min-h-0 print:bg-white print:py-0">
       <div className="mb-4 flex justify-center print:hidden">
         <PrintButton />
       </div>
