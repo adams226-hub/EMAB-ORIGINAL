@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getDefaultRoute } from "@/lib/auth/permissions";
 
 export default async function HomePage() {
   const supabase = createClient();
@@ -7,5 +8,11 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  redirect(user ? "/dashboard" : "/login");
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+
+  redirect(profile ? getDefaultRoute(profile.role) : "/login");
 }

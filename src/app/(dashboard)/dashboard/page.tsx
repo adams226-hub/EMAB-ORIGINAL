@@ -1,6 +1,6 @@
 import { Store, Package, Tags, Users, AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/auth/session";
+import { requireRole } from "@/lib/auth/session";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { canAccessModule } from "@/lib/auth/permissions";
@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const profile = await getCurrentProfile();
+  const profile = await requireRole(["super_admin"]);
   const supabase = createClient();
 
   const [storesCount, productsCount, categoriesCount, usersCount, overview] = await Promise.all([

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { sendPushToStoreManagers } from "@/lib/notifications/push";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import type { MovementType } from "@/types/database.types";
 
 const WRITE_ROLES = ["super_admin", "manager", "stock_keeper"] as const;
@@ -31,7 +32,7 @@ export async function createManualMovementsBulk(input: ManualMovementsBulkInput)
   const parsed = manualMovementsBulkSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  if (profile.role !== "super_admin" && profile.store_id !== parsed.data.store_id) {
+  if (!hasAllStoresScope(profile.role) && profile.store_id !== parsed.data.store_id) {
     return { error: "Vous ne pouvez enregistrer un mouvement que pour votre propre magasin." };
   }
 
@@ -116,7 +117,7 @@ export async function reverseMovement(movementId: string, notes?: string) {
   const oppositeType = REVERSIBLE_PAIRS[original.type];
   if (!oppositeType) return { error: "Ce type de mouvement ne peut pas être annulé directement." };
 
-  if (profile.role !== "super_admin" && profile.store_id !== original.store_id) {
+  if (!hasAllStoresScope(profile.role) && profile.store_id !== original.store_id) {
     return { error: "Vous ne pouvez annuler que les mouvements de votre magasin." };
   }
 

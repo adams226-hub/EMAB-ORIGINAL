@@ -1,17 +1,21 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import type { Database } from "@/types/database.types";
+import type { Database, UserRole } from "@/types/database.types";
+import { getDefaultRoute } from "@/lib/auth/permissions";
 
 const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback"];
 
 // Modules réservés à certains rôles — vérifié après authentification.
 const ROLE_RESTRICTED_PREFIXES: { prefix: string; roles: string[] }[] = [
+  { prefix: "/dashboard", roles: ["super_admin"] },
   { prefix: "/stores", roles: ["super_admin"] },
   { prefix: "/users", roles: ["super_admin"] },
   { prefix: "/units", roles: ["super_admin", "manager"] },
+  { prefix: "/administration", roles: ["super_admin"] },
   { prefix: "/payment-methods", roles: ["super_admin"] },
   { prefix: "/finance", roles: ["super_admin"] },
-  { prefix: "/analytics", roles: ["super_admin", "manager"] },
+  { prefix: "/analytics/sales", roles: ["super_admin", "manager", "cashier"] },
+  { prefix: "/analytics", roles: ["super_admin"] },
   { prefix: "/audit-log", roles: ["super_admin"] },
 ];
 
@@ -51,18 +55,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && (path === "/login" || path === "/signup")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
-
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role, tenants:tenant_id ( status )")
       .eq("id", user.id)
       .single();
+
+    const role = (profile as { role: UserRole } | null)?.role;
+    const defaultRoute = role ? getDefaultRoute(role) : "/dashboard";
+
+    if (path === "/login" || path === "/signup") {
+      const url = request.nextUrl.clone();
+      url.pathname = defaultRoute;
+      return NextResponse.redirect(url);
+    }
 
     const tenantStatus = (profile as unknown as { tenants: { status: string } | null } | null)?.tenants?.status;
 
@@ -74,9 +81,9 @@ export async function updateSession(request: NextRequest) {
 
     const restricted = ROLE_RESTRICTED_PREFIXES.find((r) => path.startsWith(r.prefix));
     if (restricted) {
-      if (!profile || !restricted.roles.includes(profile.role)) {
+      if (!role || !restricted.roles.includes(role)) {
         const url = request.nextUrl.clone();
-        url.pathname = "/dashboard";
+        url.pathname = defaultRoute;
         return NextResponse.redirect(url);
       }
     }

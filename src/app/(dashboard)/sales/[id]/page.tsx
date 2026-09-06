@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { SaleDetail, type SaleItemRow, type SalePaymentRow } from "@/components/sales/SaleDetail";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +62,7 @@ export default async function SaleDetailPage({ params }: { params: { id: string 
   }));
 
   const isSuperAdmin = profile.role === "super_admin";
-  const atStore = profile.store_id === sale.store_id;
+  const atStore = hasAllStoresScope(profile.role) || profile.store_id === sale.store_id;
   const canCancel = isSuperAdmin || (profile.role === "manager" && atStore);
   const canRecordPayment = isSuperAdmin || (["manager", "cashier"].includes(profile.role) && atStore);
 

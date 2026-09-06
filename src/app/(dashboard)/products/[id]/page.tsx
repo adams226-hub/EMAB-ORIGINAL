@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatCurrency } from "@/lib/utils";
 import { StockTable, type StoreStockRow } from "@/components/products/StockTable";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import type { Product, Store } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
@@ -37,12 +38,12 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   );
 
   const rows: StoreStockRow[] = (stores as Store[] ?? [])
-    .filter((store) => profile.role === "super_admin" || store.id === profile.store_id)
+    .filter((store) => hasAllStoresScope(profile.role) || store.id === profile.store_id)
     .map((store) => ({
       store,
       quantity: stockByStore.get(store.id)?.quantity ?? 0,
       alert_threshold: stockByStore.get(store.id)?.alert_threshold ?? 5,
-      editable: profile.role === "super_admin" || store.id === profile.store_id,
+      editable: hasAllStoresScope(profile.role) || store.id === profile.store_id,
     }));
 
   return (

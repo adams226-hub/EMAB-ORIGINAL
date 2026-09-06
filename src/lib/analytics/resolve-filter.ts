@@ -1,4 +1,5 @@
 import { resolvePeriod, type PeriodPreset } from "./period";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import type { UserRole } from "@/types/database.types";
 
 const VALID_PRESETS: PeriodPreset[] = ["today", "week", "month", "year", "custom"];
@@ -20,7 +21,7 @@ export function resolveAnalyticsFilter(
 
   const { from, to, previousFrom, previousTo } = resolvePeriod(preset, searchParams.from, searchParams.to);
 
-  const storeId = profile.role === "super_admin" ? searchParams.store_id || null : profile.store_id;
+  const storeId = hasAllStoresScope(profile.role) ? searchParams.store_id || null : profile.store_id;
 
   return { preset, from, to, previousFrom, previousTo, storeId };
 }

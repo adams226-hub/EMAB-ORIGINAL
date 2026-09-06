@@ -45,11 +45,13 @@ export function POSTerminal({
   products,
   customers,
   paymentMethods,
+  todaySummary,
 }: {
   storeId: string;
   products: POSProduct[];
   customers: Customer[];
   paymentMethods: PaymentMethod[];
+  todaySummary?: { count: number; total: number } | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -207,6 +209,14 @@ export function POSTerminal({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-4">
+        {todaySummary && (
+          <div className="flex items-center justify-between rounded-lg border border-brand-100 bg-brand-50 px-4 py-3">
+            <span className="text-sm font-medium text-brand-700">Ventes du jour</span>
+            <span className="text-sm font-semibold text-brand-900">
+              {todaySummary.count} vente{todaySummary.count > 1 ? "s" : ""} — {formatCurrency(todaySummary.total)}
+            </span>
+          </div>
+        )}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input

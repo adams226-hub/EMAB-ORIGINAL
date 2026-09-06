@@ -9,11 +9,12 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StockMovementsTable } from "@/components/stock/StockMovementsTable";
 import { RealtimeStockWatcher } from "@/components/stock/RealtimeStockWatcher";
 import { formatCurrency } from "@/lib/utils";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
 export default async function StockDashboardPage() {
-  const profile = await requireRole(["super_admin", "manager", "stock_keeper"]);
+  const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
 
   const [{ data: alerts }, { data: recentMovements }, { data: overview }] = await Promise.all([
@@ -33,7 +34,7 @@ export default async function StockDashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Vue d'ensemble du stock</h1>
         <p className="mt-1 text-sm text-slate-500">
-          {profile.store_name ?? "Tous les magasins"} — mise à jour en temps réel
+          {hasAllStoresScope(profile.role) ? "Tous les magasins" : profile.store_name} — mise à jour en temps réel
         </p>
       </div>
 
@@ -93,7 +94,7 @@ export default async function StockDashboardPage() {
           <CardContent>
             <StockMovementsTable
               movements={recentMovements ?? []}
-              showStore={profile.role === "super_admin"}
+              showStore={hasAllStoresScope(profile.role)}
               reversedIds={new Set()}
               canReverse={false}
             />

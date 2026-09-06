@@ -18,7 +18,7 @@ import { formatCurrency } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function AnalyticsDashboardPage({ searchParams }: { searchParams: AnalyticsSearchParams }) {
-  const profile = await requireRole(["super_admin", "manager"]);
+  const profile = await requireRole(["super_admin"]);
   const supabase = createClient();
   const filter = resolveAnalyticsFilter(searchParams, profile);
 

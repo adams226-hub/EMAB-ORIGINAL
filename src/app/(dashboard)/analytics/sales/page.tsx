@@ -1,6 +1,7 @@
 import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import { resolveAnalyticsFilter, type AnalyticsSearchParams } from "@/lib/analytics/resolve-filter";
 import { getSalesTrend } from "@/lib/analytics/sales";
 import { AnalyticsFilterBar } from "@/components/analytics/AnalyticsFilterBar";
@@ -14,12 +15,12 @@ import { formatCurrency } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function SalesAnalyticsPage({ searchParams }: { searchParams: AnalyticsSearchParams }) {
-  const profile = await requireRole(["super_admin", "manager"]);
+  const profile = await requireRole(["super_admin", "manager", "cashier"]);
   const supabase = createClient();
   const filter = resolveAnalyticsFilter(searchParams, profile);
 
   const [{ data: stores }, trend] = await Promise.all([
-    profile.role === "super_admin" ? supabase.from("stores").select("*").eq("is_active", true).order("name") : Promise.resolve({ data: [] }),
+    hasAllStoresScope(profile.role) ? supabase.from("stores").select("*").eq("is_active", true).order("name") : Promise.resolve({ data: [] }),
     getSalesTrend(supabase, filter),
   ]);
 
@@ -42,7 +43,7 @@ export default async function SalesAnalyticsPage({ searchParams }: { searchParam
         </a>
       </div>
 
-      <AnalyticsFilterBar preset={filter.preset} from={filter.from} to={filter.to} stores={stores ?? []} showStore={profile.role === "super_admin"} />
+      <AnalyticsFilterBar preset={filter.preset} from={filter.from} to={filter.to} stores={stores ?? []} showStore={hasAllStoresScope(profile.role)} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatCard

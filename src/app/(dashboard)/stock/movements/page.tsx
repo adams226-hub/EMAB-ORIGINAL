@@ -5,6 +5,7 @@ import { StockMovementsTable } from "@/components/stock/StockMovementsTable";
 import { StockMovementNav } from "@/components/stock/StockMovementNav";
 import { MovementsFilterBar } from "@/components/stock/MovementsFilterBar";
 import { cn } from "@/lib/utils";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import type { MovementType } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export default async function StockMovementsPage({
     .order("created_at", { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1);
 
-  if (profile.role !== "super_admin" && profile.store_id) {
+  if (!hasAllStoresScope(profile.role) && profile.store_id) {
     query = query.eq("store_id", profile.store_id);
   } else if (searchParams.store_id) {
     query = query.eq("store_id", searchParams.store_id);
@@ -55,7 +56,7 @@ export default async function StockMovementsPage({
 
   const [{ data: movements, count }, { data: stores }] = await Promise.all([
     query,
-    profile.role === "super_admin" ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
+    hasAllStoresScope(profile.role) ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
   ]);
 
   const reversedIds = new Set((movements ?? []).filter((m) => m.reversal_of).map((m) => m.reversal_of as string));
@@ -78,11 +79,11 @@ export default async function StockMovementsPage({
         </p>
       </div>
 
-      <MovementsFilterBar stores={stores ?? []} showStore={profile.role === "super_admin"} />
+      <MovementsFilterBar stores={stores ?? []} showStore={hasAllStoresScope(profile.role)} />
 
       <StockMovementsTable
         movements={movements ?? []}
-        showStore={profile.role === "super_admin"}
+        showStore={hasAllStoresScope(profile.role)}
         reversedIds={reversedIds}
         canReverse={false}
       />

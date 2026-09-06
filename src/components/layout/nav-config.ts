@@ -39,7 +39,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Analytique & BI",
     items: [
       { key: "analytics", label: "Dashboard analytique", href: "/analytics", icon: BarChart3 },
-      { key: "analytics", label: "Rapport ventes", href: "/analytics/sales", icon: TrendingUp },
+      { key: "sales_report", label: "Rapport ventes", href: "/analytics/sales", icon: TrendingUp },
     ],
   },
   {

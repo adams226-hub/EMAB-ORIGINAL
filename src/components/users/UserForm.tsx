@@ -42,9 +42,6 @@ export function UserForm({
 
   const needsStore = values.role !== "super_admin";
 
-  const availableRoles =
-    initial && !CREATABLE_ROLES.includes(initial.role) ? [initial.role, ...CREATABLE_ROLES] : CREATABLE_ROLES;
-
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     onSubmit(values);
@@ -98,7 +95,7 @@ export function UserForm({
           value={values.role}
           onChange={(e) => setValues((v) => ({ ...v, role: e.target.value as UserRole }))}
         >
-          {availableRoles.map((role) => (
+          {CREATABLE_ROLES.map((role) => (
             <option key={role} value={role}>
               {ROLE_LABELS[role]}
             </option>

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { ProductsManager, type ProductRow } from "@/components/products/ProductsManager";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import type { Product } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
@@ -8,14 +9,14 @@ export const dynamic = "force-dynamic";
 type ProductWithCategory = Product & { categories: { name: string } | null };
 
 export default async function ProductsPage() {
-  const profile = await requireRole(["super_admin", "manager", "stock_keeper"]);
+  const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
 
   const [{ data: products }, { data: categories }, { data: stockRows }, { data: stores }] = await Promise.all([
     supabase.from("products").select("*, categories ( name )").order("created_at", { ascending: false }),
     supabase.from("categories").select("*").order("name"),
     supabase.from("product_stock").select("product_id, quantity"),
-    profile.role === "super_admin"
+    hasAllStoresScope(profile.role)
       ? supabase.from("stores").select("*").eq("is_active", true).order("name")
       : Promise.resolve({ data: [] }),
   ]);

@@ -1,16 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { CountsManager, type CountRow } from "@/components/counts/CountsManager";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import type { Store } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
 
 export default async function StockCountsPage() {
-  const profile = await requireRole(["super_admin", "manager", "stock_keeper"]);
+  const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
 
   let countsQuery = supabase.from("stock_counts").select("*").order("created_at", { ascending: false });
-  if (profile.role !== "super_admin" && profile.store_id) {
+  if (!hasAllStoresScope(profile.role) && profile.store_id) {
     countsQuery = countsQuery.eq("store_id", profile.store_id);
   }
 
@@ -30,7 +31,7 @@ export default async function StockCountsPage() {
     <CountsManager
       counts={rows}
       stores={stores ?? []}
-      fixedStoreId={profile.role === "super_admin" ? null : profile.store_id}
+      fixedStoreId={hasAllStoresScope(profile.role) ? null : profile.store_id}
     />
   );
 }

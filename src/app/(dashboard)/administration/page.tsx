@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentProfile } from "@/lib/auth/session";
+import { requireRole } from "@/lib/auth/session";
 import { AdministrationTabs } from "@/components/administration/AdministrationTabs";
 import { StoresManager } from "@/components/stores/StoresManager";
 import { UsersManager, type UserRow } from "@/components/users/UsersManager";
@@ -24,7 +24,7 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 export default async function AdministrationPage() {
-  const profile = await getCurrentProfile();
+  const profile = await requireRole(["super_admin"]);
   const supabase = createClient();
   const isSuperAdmin = profile.role === "super_admin";
 

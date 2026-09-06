@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getDefaultRoute } from "@/lib/auth/permissions";
 import type { Profile, TenantPlan, TenantStatus } from "@/types/database.types";
 
 export interface SessionProfile extends Profile {
@@ -55,7 +56,7 @@ export async function getCurrentProfile(): Promise<SessionProfile> {
 export async function requireRole(allowed: SessionProfile["role"][]) {
   const profile = await getCurrentProfile();
   if (!allowed.includes(profile.role)) {
-    redirect("/dashboard");
+    redirect(getDefaultRoute(profile.role));
   }
   return profile;
 }

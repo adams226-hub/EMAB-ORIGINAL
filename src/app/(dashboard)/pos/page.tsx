@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { POSTerminal, type POSProduct } from "@/components/pos/POSTerminal";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import type { Product } from "@/types/database.types";
 import Link from "next/link";
@@ -13,7 +14,7 @@ export default async function POSPage({ searchParams }: { searchParams: { store?
   const profile = await requireRole(["super_admin", "manager", "cashier"]);
   const supabase = createClient();
 
-  const storeId = profile.role === "super_admin" ? searchParams.store : profile.store_id;
+  const storeId = hasAllStoresScope(profile.role) ? searchParams.store : profile.store_id;
 
   if (!storeId) {
     const { data: stores } = await supabase.from("stores").select("*").eq("is_active", true).order("name");
@@ -44,6 +45,22 @@ export default async function POSPage({ searchParams }: { searchParams: { store?
     supabase.from("payment_methods").select("*").eq("is_active", true).order("name"),
   ]);
 
+  let todaySummary: { count: number; total: number } | null = null;
+  if (profile.role === "cashier") {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const { data: todaySales } = await supabase
+      .from("sales")
+      .select("total_amount")
+      .eq("store_id", storeId)
+      .neq("status", "cancelled")
+      .gte("sale_date", startOfDay.toISOString());
+    todaySummary = {
+      count: todaySales?.length ?? 0,
+      total: (todaySales ?? []).reduce((sum, s) => sum + Number(s.total_amount), 0),
+    };
+  }
+
   const stockByProduct = new Map((stockRows ?? []).map((r) => [r.product_id, Number(r.quantity)]));
 
   const posProducts: POSProduct[] = ((products ?? []) as unknown as ProductWithCategory[]).map((p) => ({
@@ -69,6 +86,7 @@ export default async function POSPage({ searchParams }: { searchParams: { store?
         products={posProducts}
         customers={customers ?? []}
         paymentMethods={paymentMethods ?? []}
+        todaySummary={todaySummary}
       />
     </div>
   );

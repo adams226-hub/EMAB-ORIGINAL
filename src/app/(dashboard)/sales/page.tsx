@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import { SalesFilterBar } from "@/components/sales/SalesFilterBar";
 import { PaymentStatusBadge } from "@/components/sales/PaymentStatusBadge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
@@ -30,7 +31,7 @@ export default async function SalesPage({
     .order("sale_date", { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1);
 
-  if (profile.role !== "super_admin" && profile.store_id) {
+  if (!hasAllStoresScope(profile.role) && profile.store_id) {
     query = query.eq("store_id", profile.store_id);
   } else if (searchParams.store_id) {
     query = query.eq("store_id", searchParams.store_id);
@@ -50,7 +51,7 @@ export default async function SalesPage({
 
   const [{ data: sales, count }, { data: stores }] = await Promise.all([
     query,
-    profile.role === "super_admin" ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
+    hasAllStoresScope(profile.role) ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
@@ -68,7 +69,7 @@ export default async function SalesPage({
         <p className="mt-1 text-sm text-slate-500">{count ?? 0} vente(s)</p>
       </div>
 
-      <SalesFilterBar stores={stores ?? []} showStore={profile.role === "super_admin"} />
+      <SalesFilterBar stores={stores ?? []} showStore={hasAllStoresScope(profile.role)} />
 
       {!sales || sales.length === 0 ? (
         <EmptyState icon={Receipt} title="Aucune vente" description="Aucune vente ne correspond à ces critères." />
@@ -79,7 +80,7 @@ export default async function SalesPage({
               <TH>Référence</TH>
               <TH>Date</TH>
               <TH>Client</TH>
-              {profile.role === "super_admin" && <TH>Magasin</TH>}
+              {hasAllStoresScope(profile.role) && <TH>Magasin</TH>}
               <TH>Total</TH>
               <TH>Solde dû</TH>
               <TH>Statut</TH>
@@ -95,7 +96,7 @@ export default async function SalesPage({
                 </TD>
                 <TD className="text-sm text-slate-500">{formatDate(sale.sale_date)}</TD>
                 <TD>{sale.customer_name ?? "Client de passage"}</TD>
-                {profile.role === "super_admin" && <TD>{sale.store_name}</TD>}
+                {hasAllStoresScope(profile.role) && <TD>{sale.store_name}</TD>}
                 <TD className="font-medium">{formatCurrency(sale.total_amount)}</TD>
                 <TD className={cn(sale.amount_due > 0 && "font-medium text-amber-600")}>
                   {formatCurrency(sale.amount_due)}

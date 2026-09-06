@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 import { toXlsxMulti, xlsxResponse } from "@/lib/xlsx";
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
@@ -16,7 +17,7 @@ const SALE_TYPE_LABELS: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
-  const profile = await requireRole(["super_admin", "manager"]);
+  const profile = await requireRole(["super_admin", "manager", "cashier"]);
   const supabase = createClient();
 
   const { searchParams } = new URL(request.url);
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     .select("*")
     .order("sale_date", { ascending: false });
 
-  if (profile.role !== "super_admin" && profile.store_id) {
+  if (!hasAllStoresScope(profile.role) && profile.store_id) {
     query = query.eq("store_id", profile.store_id);
   } else if (storeId) {
     query = query.eq("store_id", storeId);

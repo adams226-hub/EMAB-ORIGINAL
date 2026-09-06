@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile, requireRole } from "@/lib/auth/session";
+import { hasAllStoresScope } from "@/lib/auth/permissions";
 
 const productSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -133,7 +134,7 @@ export async function upsertProductStock(productId: string, input: z.infer<typeo
   const parsed = stockSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  if (profile.role !== "super_admin" && profile.store_id !== parsed.data.store_id) {
+  if (!hasAllStoresScope(profile.role) && profile.store_id !== parsed.data.store_id) {
     return { error: "Vous ne pouvez modifier le stock que de votre propre magasin." };
   }
 
