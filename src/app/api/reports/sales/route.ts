@@ -138,6 +138,36 @@ export async function GET(request: NextRequest) {
   };
   const detailRows = [...itemRows, itemsTotalRow];
 
+  const productTotalsMap = new Map<
+    string,
+    { product_name: string; sku: string; category_name: string; quantity: number; total: number }
+  >();
+  for (const item of itemRows) {
+    const key = item.sku || item.product_name;
+    const existing = productTotalsMap.get(key);
+    if (existing) {
+      existing.quantity += item.quantity;
+      existing.total += item.line_total;
+    } else {
+      productTotalsMap.set(key, {
+        product_name: item.product_name,
+        sku: item.sku,
+        category_name: item.category_name,
+        quantity: item.quantity,
+        total: item.line_total,
+      });
+    }
+  }
+  const productTotals = Array.from(productTotalsMap.values()).sort((a, b) => b.total - a.total);
+  const productTotalsGrandRow = {
+    product_name: "TOTAL",
+    sku: "",
+    category_name: "",
+    quantity: productTotals.reduce((sum, r) => sum + r.quantity, 0),
+    total: productTotals.reduce((sum, r) => sum + r.total, 0),
+  };
+  const productTotalsRows = [...productTotals, productTotalsGrandRow];
+
   const xlsx = toXlsxMulti([
     {
       name: "Ventes",
@@ -175,6 +205,18 @@ export async function GET(request: NextRequest) {
         { key: "unit_price", label: "Prix unitaire", numberFormat: true },
         { key: "discount_amount", label: "Remise (FCFA)", numberFormat: true },
         { key: "line_total", label: "Total ligne", numberFormat: true },
+      ],
+    },
+    {
+      name: "Totaux par produit",
+      rows: productTotalsRows,
+      boldRows: [productTotalsRows.length - 1],
+      columns: [
+        { key: "product_name", label: "Produit" },
+        { key: "sku", label: "SKU" },
+        { key: "category_name", label: "Catégorie" },
+        { key: "quantity", label: "Quantité totale", numberFormat: true },
+        { key: "total", label: "Total (FCFA)", numberFormat: true },
       ],
     },
   ]);
