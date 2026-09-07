@@ -208,15 +208,15 @@ export async function GET(request: NextRequest) {
       ],
     },
     {
-      name: "Totaux par produit",
+      name: "Totaux ventes par produit",
       rows: productTotalsRows,
       boldRows: [productTotalsRows.length - 1],
       columns: [
         { key: "product_name", label: "Produit" },
         { key: "sku", label: "SKU" },
         { key: "category_name", label: "Catégorie" },
-        { key: "quantity", label: "Quantité totale", numberFormat: true },
-        { key: "total", label: "Total (FCFA)", numberFormat: true },
+        { key: "quantity", label: "Quantité vendue", numberFormat: true },
+        { key: "total", label: "Total ventes (FCFA)", numberFormat: true },
       ],
     },
   ]);
