@@ -16,6 +16,14 @@
     size: auto;
     margin: 0;
   }
+
+  /* Reçu de caisse : largeur fixe (rouleau 80mm), hauteur libre pour
+     s'arrêter juste après le contenu réel au lieu d'hériter de la
+     longueur de page par défaut de l'imprimante. */
+  @page receipt {
+    size: 80mm auto;
+    margin: 0;
+  }
 }
 
 @layer components {
