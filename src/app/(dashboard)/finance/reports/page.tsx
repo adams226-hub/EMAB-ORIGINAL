@@ -18,17 +18,22 @@ function defaultPeriod() {
 export default async function FinancialReportsPage({
   searchParams,
 }: {
-  searchParams: { from?: string; to?: string };
+  searchParams: { from?: string; to?: string; store_id?: string };
 }) {
-  const profile = await requireRole(["super_admin"]);
+  await requireRole(["super_admin"]);
   const supabase = createClient();
 
   const defaults = defaultPeriod();
   const from = searchParams.from ?? defaults.from;
   const to = searchParams.to ?? defaults.to;
-  const storeId = profile.role === "super_admin" ? null : profile.store_id;
+  const storeId = searchParams.store_id || null;
 
-  const summary = await getFinancialSummary(supabase, { storeId, from, to });
+  const [summary, { data: stores }] = await Promise.all([
+    getFinancialSummary(supabase, { storeId, from, to }),
+    supabase.from("stores").select("*").eq("is_active", true).order("name"),
+  ]);
+
+  const selectedStoreName = storeId ? (stores ?? []).find((s) => s.id === storeId)?.name : null;
 
   const exportParams = new URLSearchParams({ from, to });
   if (storeId) exportParams.set("store_id", storeId);
@@ -37,10 +42,10 @@ export default async function FinancialReportsPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Rapports financiers</h1>
-        <p className="mt-1 text-sm text-slate-500">{profile.store_name ?? "Tous les magasins"}</p>
+        <p className="mt-1 text-sm text-slate-500">{selectedStoreName ?? "Tous les magasins"}</p>
       </div>
 
-      <PeriodFilterBar from={from} to={to} />
+      <PeriodFilterBar from={from} to={to} stores={stores ?? []} />
 
       <Card>
         <CardHeader>

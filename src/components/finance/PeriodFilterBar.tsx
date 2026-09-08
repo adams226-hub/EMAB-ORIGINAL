@@ -4,8 +4,18 @@ import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
+import type { Store } from "@/types/database.types";
 
-export function PeriodFilterBar({ from, to }: { from: string; to: string }) {
+export function PeriodFilterBar({
+  from,
+  to,
+  stores,
+}: {
+  from: string;
+  to: string;
+  stores?: Store[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -20,6 +30,13 @@ export function PeriodFilterBar({ from, to }: { from: string; to: string }) {
     router.push(`${pathname}?${params.toString()}`);
   }
 
+  function setStore(storeId: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (storeId) params.set("store_id", storeId);
+    else params.delete("store_id");
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   return (
     <form onSubmit={applyFilters} className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4">
       <div>
@@ -31,6 +48,20 @@ export function PeriodFilterBar({ from, to }: { from: string; to: string }) {
         <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
       </div>
       <Button type="submit">Appliquer</Button>
+
+      {stores && (
+        <div className="ml-auto">
+          <label className="label-base">Magasin</label>
+          <Select value={searchParams.get("store_id") ?? ""} onChange={(e) => setStore(e.target.value)} className="w-56">
+            <option value="">Tous les magasins</option>
+            {stores.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
     </form>
   );
 }

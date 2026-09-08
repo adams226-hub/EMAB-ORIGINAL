@@ -19,14 +19,15 @@ function defaultPeriod() {
 export default async function FinancialDashboardPage({
   searchParams,
 }: {
-  searchParams: { from?: string; to?: string };
+  searchParams: { from?: string; to?: string; store_id?: string };
 }) {
-  const profile = await requireRole(["super_admin"]);
+  await requireRole(["super_admin"]);
   const supabase = createClient();
 
   const defaults = defaultPeriod();
   const from = searchParams.from ?? defaults.from;
   const to = searchParams.to ?? defaults.to;
+  const storeId = searchParams.store_id || null;
 
   let salesQuery = supabase
     .from("sales")
@@ -35,13 +36,14 @@ export default async function FinancialDashboardPage({
     .gte("sale_date", `${from}T00:00:00`)
     .lte("sale_date", `${to}T23:59:59`);
 
-  if (profile.role !== "super_admin" && profile.store_id) {
-    salesQuery = salesQuery.eq("store_id", profile.store_id);
+  if (storeId) {
+    salesQuery = salesQuery.eq("store_id", storeId);
   }
 
-  const [{ data: sales }, { data: receivables }] = await Promise.all([
+  const [{ data: sales }, { data: receivables }, { data: stores }] = await Promise.all([
     salesQuery,
     supabase.from("v_customer_receivables").select("total_due"),
+    supabase.from("stores").select("*").eq("is_active", true).order("name"),
   ]);
 
   const saleIds = (sales ?? []).map((s) => s.id);
@@ -87,15 +89,16 @@ export default async function FinancialDashboardPage({
     .slice(0, 10);
 
   const totalReceivables = (receivables ?? []).reduce((sum, r) => sum + Number(r.total_due), 0);
+  const selectedStoreName = storeId ? (stores ?? []).find((s) => s.id === storeId)?.name : null;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Dashboard financier</h1>
-        <p className="mt-1 text-sm text-slate-500">{profile.store_name ?? "Tous les magasins"}</p>
+        <p className="mt-1 text-sm text-slate-500">{selectedStoreName ?? "Tous les magasins"}</p>
       </div>
 
-      <PeriodFilterBar from={from} to={to} />
+      <PeriodFilterBar from={from} to={to} stores={stores ?? []} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard label="Chiffre d'affaires" value={formatCurrency(revenue)} icon={TrendingUp} tone="success" />
