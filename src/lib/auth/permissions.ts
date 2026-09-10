@@ -32,8 +32,8 @@ export type ModuleKey =
 export const MODULE_PERMISSIONS: Record<ModuleKey, UserRole[]> = {
   dashboard: ["super_admin"],
   stores: ["super_admin"],
-  categories: ["super_admin", "manager", "cashier", "stock_keeper"],
-  products: ["super_admin", "manager", "cashier", "stock_keeper"],
+  categories: ["super_admin", "manager", "stock_keeper"],
+  products: ["super_admin", "manager", "stock_keeper"],
   users: ["super_admin"],
   settings: ["super_admin"],
   stock_dashboard: ["super_admin", "manager", "cashier", "stock_keeper"],
@@ -64,7 +64,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   super_admin: "Accès total à tous les magasins et modules",
   manager: "Point de vente, ventes, catalogue, stock et clients, sur tous les magasins",
-  cashier: "Point de vente, ventes, catalogue, inventaire, clients et créances",
+  cashier: "Point de vente, ventes, inventaire, clients et créances",
   stock_keeper: "Entrées/sorties de stock, inventaire et catalogue",
 };
 

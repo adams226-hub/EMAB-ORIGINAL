@@ -5,7 +5,7 @@ import { CategoriesManager } from "@/components/categories/CategoriesManager";
 export const dynamic = "force-dynamic";
 
 export default async function CategoriesPage() {
-  const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
+  const profile = await requireRole(["super_admin", "manager", "stock_keeper"]);
   const supabase = createClient();
 
   const { data: categories } = await supabase.from("categories").select("*").order("name");

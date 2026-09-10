@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 type ProductWithCategory = Product & { categories: { name: string } | null };
 
 export default async function CatalogPage() {
-  const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
+  const profile = await requireRole(["super_admin", "manager", "stock_keeper"]);
   const supabase = createClient();
 
   const [{ data: products }, { data: categories }, { data: stockRows }, { data: stores }, { data: units }] =
