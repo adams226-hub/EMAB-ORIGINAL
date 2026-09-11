@@ -8,34 +8,66 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StockMovementsTable } from "@/components/stock/StockMovementsTable";
 import { RealtimeStockWatcher } from "@/components/stock/RealtimeStockWatcher";
+import { StockStoreFilter } from "@/components/stock/StockStoreFilter";
 import { formatCurrency } from "@/lib/utils";
 import { hasAllStoresScope } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
-export default async function StockDashboardPage() {
+export default async function StockDashboardPage({
+  searchParams,
+}: {
+  searchParams: { store_id?: string };
+}) {
   const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
 
-  const [{ data: alerts }, { data: recentMovements }, { data: overview }] = await Promise.all([
-    supabase.from("v_stock_alerts").select("*").order("quantity"),
-    supabase.from("v_stock_movements_detail").select("*").order("created_at", { ascending: false }).limit(10),
-    supabase.from("v_products_overview").select("total_stock, sale_price"),
+  const canFilterByStore = hasAllStoresScope(profile.role);
+  const storeId = canFilterByStore ? searchParams.store_id || null : profile.store_id;
+
+  let alertsQuery = supabase.from("v_stock_alerts").select("*").order("quantity");
+  let movementsQuery = supabase
+    .from("v_stock_movements_detail")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(10);
+  let stockQuery = supabase.from("product_stock").select("quantity, products ( sale_price )");
+
+  if (storeId) {
+    alertsQuery = alertsQuery.eq("store_id", storeId);
+    movementsQuery = movementsQuery.eq("store_id", storeId);
+    stockQuery = stockQuery.eq("store_id", storeId);
+  }
+
+  const [{ data: alerts }, { data: recentMovements }, { data: stockRows }, { data: stores }] = await Promise.all([
+    alertsQuery,
+    movementsQuery,
+    stockQuery,
+    canFilterByStore
+      ? supabase.from("stores").select("*").eq("is_active", true).order("name")
+      : Promise.resolve({ data: [] }),
   ]);
 
-  const rows = overview ?? [];
-  const totalStockUnits = rows.reduce((sum, r) => sum + Number(r.total_stock), 0);
-  const stockValue = rows.reduce((sum, r) => sum + Number(r.total_stock) * Number(r.sale_price), 0);
+  type StockRow = { quantity: number; products: { sale_price: number } | null };
+  const stock = (stockRows ?? []) as unknown as StockRow[];
+  const totalStockUnits = stock.reduce((sum, r) => sum + Number(r.quantity), 0);
+  const stockValue = stock.reduce((sum, r) => sum + Number(r.quantity) * Number(r.products?.sale_price ?? 0), 0);
+
+  const selectedStoreName = storeId ? (stores ?? []).find((s) => s.id === storeId)?.name : null;
 
   return (
     <div className="space-y-6">
       <RealtimeStockWatcher />
 
-      <div>
-        <h1 className="text-2xl font-semibold text-slate-900">Vue d'ensemble du stock</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {hasAllStoresScope(profile.role) ? "Tous les magasins" : profile.store_name} — mise à jour en temps réel
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Vue d'ensemble du stock</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {selectedStoreName ?? (canFilterByStore ? "Tous les magasins" : profile.store_name)} — mise à jour en
+            temps réel
+          </p>
+        </div>
+        {canFilterByStore && <StockStoreFilter stores={stores ?? []} />}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -94,7 +126,7 @@ export default async function StockDashboardPage() {
           <CardContent>
             <StockMovementsTable
               movements={recentMovements ?? []}
-              showStore={hasAllStoresScope(profile.role)}
+              showStore={canFilterByStore}
               reversedIds={new Set()}
               canReverse={false}
             />
