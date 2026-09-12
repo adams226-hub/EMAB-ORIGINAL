@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Users as UsersIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, KeyRound, Users as UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import { FormError } from "@/components/ui/FormError";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import type { Profile, Store } from "@/types/database.types";
 import { UserForm, type UserFormValues } from "./UserForm";
-import { createUser, updateUser, deleteUser, toggleUserActive } from "@/app/(dashboard)/users/actions";
+import { createUser, updateUser, deleteUser, toggleUserActive, resetUserPassword } from "@/app/(dashboard)/users/actions";
 
 export interface UserRow extends Profile {
   store_name: string | null;
@@ -31,6 +34,9 @@ export function UsersManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<UserRow | null>(null);
   const [error, setError] = useState<string | undefined>();
+  const [resetTarget, setResetTarget] = useState<UserRow | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [resetError, setResetError] = useState<string | undefined>();
 
   function openCreate() {
     setEditing(null);
@@ -76,6 +82,26 @@ export function UsersManager({
     startTransition(async () => {
       await toggleUserActive(user.id, !user.is_active);
       router.refresh();
+    });
+  }
+
+  function openResetPassword(user: UserRow) {
+    setResetTarget(user);
+    setNewPassword("");
+    setResetError(undefined);
+  }
+
+  function handleResetPassword(e: FormEvent) {
+    e.preventDefault();
+    if (!resetTarget) return;
+    startTransition(async () => {
+      const result = await resetUserPassword(resetTarget.id, { password: newPassword });
+      if (result.error) {
+        setResetError(result.error);
+        return;
+      }
+      setResetTarget(null);
+      setNewPassword("");
     });
   }
 
@@ -138,6 +164,9 @@ export function UsersManager({
                     <Button variant="ghost" size="sm" onClick={() => openEdit(user)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
+                    <Button variant="ghost" size="sm" onClick={() => openResetPassword(user)}>
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
                     {user.id !== currentUserId && (
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(user)}>
                         <Trash2 className="h-4 w-4 text-red-500" />
@@ -164,6 +193,36 @@ export function UsersManager({
           onSubmit={handleSubmit}
           onCancel={() => setModalOpen(false)}
         />
+      </Modal>
+
+      <Modal
+        open={Boolean(resetTarget)}
+        onClose={() => setResetTarget(null)}
+        title={`Réinitialiser le mot de passe — ${resetTarget?.full_name ?? ""}`}
+      >
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          <FormError message={resetError} />
+          <div>
+            <Label htmlFor="new_password">Nouveau mot de passe</Label>
+            <Input
+              id="new_password"
+              type="password"
+              required
+              minLength={8}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="8 caractères minimum"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => setResetTarget(null)} disabled={isPending}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Enregistrement..." : "Réinitialiser"}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

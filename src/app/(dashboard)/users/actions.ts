@@ -22,6 +22,10 @@ const updateUserSchema = z.object({
   store_id: z.string().uuid().optional().nullable().or(z.literal("")),
 });
 
+const resetPasswordSchema = z.object({
+  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
+});
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
@@ -94,6 +98,18 @@ export async function updateUser(id: string, input: UpdateUserInput) {
 
   revalidatePath("/users");
   revalidatePath("/administration");
+  return {};
+}
+
+export async function resetUserPassword(id: string, input: { password: string }) {
+  await requireRole(["super_admin"]);
+  const parsed = resetPasswordSchema.safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(id, { password: parsed.data.password });
+  if (error) return { error: error.message };
+
   return {};
 }
 
