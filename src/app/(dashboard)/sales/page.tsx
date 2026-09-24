@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth/session";
 import { hasAllStoresScope } from "@/lib/auth/permissions";
 import { SalesFilterBar } from "@/components/sales/SalesFilterBar";
 import { PaymentStatusBadge } from "@/components/sales/PaymentStatusBadge";
+import { TodaySalesByProduct, type TodayProductSalesRow } from "@/components/sales/TodaySalesByProduct";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
@@ -54,6 +55,53 @@ export default async function SalesPage({
     hasAllStoresScope(profile.role) ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
   ]);
 
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  let todaySalesQuery = supabase
+    .from("sales")
+    .select("id")
+    .eq("status", "completed")
+    .gte("sale_date", startOfDay.toISOString())
+    .lte("sale_date", endOfDay.toISOString());
+
+  if (!hasAllStoresScope(profile.role) && profile.store_id) {
+    todaySalesQuery = todaySalesQuery.eq("store_id", profile.store_id);
+  } else if (searchParams.store_id) {
+    todaySalesQuery = todaySalesQuery.eq("store_id", searchParams.store_id);
+  }
+
+  const { data: todaySaleIds } = await todaySalesQuery;
+  const todaySaleIdList = (todaySaleIds ?? []).map((s) => s.id);
+
+  const { data: todayItems } = todaySaleIdList.length
+    ? await supabase
+        .from("sale_items")
+        .select("quantity, line_total, products ( name, sku )")
+        .in("sale_id", todaySaleIdList)
+    : { data: [] };
+
+  type TodayItemRow = { quantity: number; line_total: number; products: { name: string; sku: string } | null };
+  const todayProductMap = new Map<string, TodayProductSalesRow>();
+  for (const item of (todayItems ?? []) as unknown as TodayItemRow[]) {
+    const key = item.products?.sku || item.products?.name || "—";
+    const existing = todayProductMap.get(key);
+    if (existing) {
+      existing.quantity += Number(item.quantity);
+      existing.total += Number(item.line_total);
+    } else {
+      todayProductMap.set(key, {
+        product_name: item.products?.name ?? "—",
+        sku: item.products?.sku ?? "—",
+        quantity: Number(item.quantity),
+        total: Number(item.line_total),
+      });
+    }
+  }
+  const todayProductSales = Array.from(todayProductMap.values()).sort((a, b) => b.quantity - a.quantity);
+
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
 
   const buildPageHref = (p: number) => {
@@ -68,6 +116,8 @@ export default async function SalesPage({
         <h1 className="text-2xl font-semibold text-slate-900">Ventes</h1>
         <p className="mt-1 text-sm text-slate-500">{count ?? 0} vente(s)</p>
       </div>
+
+      <TodaySalesByProduct rows={todayProductSales} />
 
       <SalesFilterBar stores={stores ?? []} showStore={hasAllStoresScope(profile.role)} />
 
