@@ -16,6 +16,28 @@ const SALE_TYPE_LABELS: Record<string, string> = {
   wholesale: "Gros",
 };
 
+// Une longue liste d'identifiants dans un seul filtre .in() peut dépasser
+// la taille de requête acceptée et échouer silencieusement (résultat
+// vide) sur un export couvrant beaucoup de ventes — on découpe en petits
+// paquets et on fusionne les résultats.
+const CHUNK_SIZE = 150;
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size));
+  return chunks;
+}
+
+type SalePaymentRow = { reference_id: string; amount: number; payment_methods: { name: string } | null };
+type SaleItemRow = {
+  sale_id: string;
+  quantity: number;
+  unit_price: number;
+  discount_amount: number;
+  line_total: number;
+  sale_type: string;
+  products: { name: string; sku: string; categories: { name: string } | null } | null;
+};
+
 export async function GET(request: NextRequest) {
   const profile = await requireRole(["super_admin", "manager", "cashier"]);
   const supabase = createClient();
@@ -42,19 +64,23 @@ export async function GET(request: NextRequest) {
   if (error) return new Response(error.message, { status: 400 });
 
   const saleIds = (sales ?? []).map((s) => s.id);
-  const { data: payments } = saleIds.length
-    ? await supabase
+  const saleIdChunks = chunkArray(saleIds, CHUNK_SIZE);
+
+  const paymentsResults = await Promise.all(
+    saleIdChunks.map((chunk) =>
+      supabase
         .from("payments")
         .select("reference_id, amount, payment_methods ( name )")
         .eq("type", "sale_payment")
-        .in("reference_id", saleIds)
-    : { data: [] };
+        .in("reference_id", chunk)
+    )
+  );
+  const payments = paymentsResults.flatMap((r) => (r.data ?? []) as unknown as SalePaymentRow[]);
 
-  type SalePaymentRow = { reference_id: string; amount: number; payment_methods: { name: string } | null };
   const mobileMoneyBySale = new Map<string, number>();
   const cashBySale = new Map<string, number>();
 
-  for (const p of (payments ?? []) as unknown as SalePaymentRow[]) {
+  for (const p of payments) {
     const methodName = p.payment_methods?.name;
     const bucket = methodName === "Mobile Money" ? mobileMoneyBySale : methodName === "Espèces" ? cashBySale : null;
     if (!bucket) continue;
@@ -85,26 +111,20 @@ export async function GET(request: NextRequest) {
   const salesRows = [...rows, salesTotalRow];
 
   const salesById = new Map((sales ?? []).map((s) => [s.id, s]));
-  const { data: items } = saleIds.length
-    ? await supabase
+
+  const itemsResults = await Promise.all(
+    saleIdChunks.map((chunk) =>
+      supabase
         .from("sale_items")
         .select(
           "sale_id, quantity, unit_price, discount_amount, line_total, sale_type, products ( name, sku, categories ( name ) )"
         )
-        .in("sale_id", saleIds)
-    : { data: [] };
+        .in("sale_id", chunk)
+    )
+  );
+  const items = itemsResults.flatMap((r) => (r.data ?? []) as unknown as SaleItemRow[]);
 
-  type SaleItemRow = {
-    sale_id: string;
-    quantity: number;
-    unit_price: number;
-    discount_amount: number;
-    line_total: number;
-    sale_type: string;
-    products: { name: string; sku: string; categories: { name: string } | null } | null;
-  };
-
-  const itemRows = ((items ?? []) as unknown as SaleItemRow[]).map((item) => {
+  const itemRows = items.map((item) => {
     const sale = salesById.get(item.sale_id);
     return {
       reference: sale?.reference ?? "",
