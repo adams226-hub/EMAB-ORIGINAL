@@ -18,7 +18,15 @@ const PAGE_SIZE = 50;
 export default async function SalesPage({
   searchParams,
 }: {
-  searchParams: { q?: string; status?: string; store_id?: string; from?: string; to?: string; page?: string };
+  searchParams: {
+    q?: string;
+    product?: string;
+    status?: string;
+    store_id?: string;
+    from?: string;
+    to?: string;
+    page?: string;
+  };
 }) {
   const profile = await requireRole(["super_admin", "manager", "cashier"]);
   const supabase = createClient();
@@ -48,6 +56,27 @@ export default async function SalesPage({
   if (searchParams.q) {
     const safe = searchParams.q.replace(/[,()%]/g, "").trim();
     if (safe) query = query.or(`reference.ilike.%${safe}%,customer_name.ilike.%${safe}%`);
+  }
+
+  if (searchParams.product) {
+    const safeProduct = searchParams.product.replace(/[,()%]/g, "").trim();
+    let matchingSaleIds: string[] = ["00000000-0000-0000-0000-000000000000"];
+    if (safeProduct) {
+      const { data: matchingProducts } = await supabase
+        .from("products")
+        .select("id")
+        .or(`name.ilike.%${safeProduct}%,sku.ilike.%${safeProduct}%`);
+      const productIds = (matchingProducts ?? []).map((p) => p.id);
+      if (productIds.length) {
+        const { data: matchingItems } = await supabase
+          .from("sale_items")
+          .select("sale_id")
+          .in("product_id", productIds);
+        const ids = Array.from(new Set((matchingItems ?? []).map((i) => i.sale_id)));
+        if (ids.length) matchingSaleIds = ids;
+      }
+    }
+    query = query.in("id", matchingSaleIds);
   }
 
   const [{ data: sales, count }, { data: stores }] = await Promise.all([

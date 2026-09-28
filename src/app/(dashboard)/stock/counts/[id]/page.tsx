@@ -45,7 +45,7 @@ export default async function StockCountDetailPage({ params }: { params: { id: s
   const canEdit = count.status === "draft" && (isSuperAdmin || atStore);
   const canSubmit = canEdit;
   const canValidate =
-    count.status === "submitted" && (isSuperAdmin || (profile.role === "manager" && atStore));
+    count.status === "submitted" && (isSuperAdmin || (["manager", "cashier"].includes(profile.role) && atStore));
 
   return (
     <div className="space-y-6">

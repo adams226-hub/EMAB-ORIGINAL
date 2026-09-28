@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { hasAllStoresScope } from "@/lib/auth/permissions";
 
-const WRITE_ROLES = ["super_admin", "manager", "stock_keeper"] as const;
+const WRITE_ROLES = ["super_admin", "manager", "cashier", "stock_keeper"] as const;
 
 const createCountSchema = z.object({
   store_id: z.string().uuid("Magasin requis"),

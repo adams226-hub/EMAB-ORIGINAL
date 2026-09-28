@@ -122,21 +122,26 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  const itemsTotalRow = {
-    reference: "TOTAL",
-    sale_date: "",
-    store_name: "",
-    customer_name: "",
-    product_name: "",
-    sku: "",
-    category_name: "",
-    sale_type: "",
-    quantity: itemRows.reduce((sum, r) => sum + r.quantity, 0),
-    unit_price: "",
-    discount_amount: itemRows.reduce((sum, r) => sum + r.discount_amount, 0),
-    line_total: itemRows.reduce((sum, r) => sum + r.line_total, 0),
-  };
-  const detailRows = [...itemRows, itemsTotalRow];
+  function buildItemsTotalRow(rows: typeof itemRows) {
+    return {
+      reference: "TOTAL",
+      sale_date: "",
+      store_name: "",
+      customer_name: "",
+      product_name: "",
+      sku: "",
+      category_name: "",
+      quantity: rows.reduce((sum, r) => sum + r.quantity, 0),
+      unit_price: "",
+      discount_amount: rows.reduce((sum, r) => sum + r.discount_amount, 0),
+      line_total: rows.reduce((sum, r) => sum + r.line_total, 0),
+    };
+  }
+
+  const retailItemRows = itemRows.filter((r) => r.sale_type === SALE_TYPE_LABELS.retail);
+  const wholesaleItemRows = itemRows.filter((r) => r.sale_type === SALE_TYPE_LABELS.wholesale);
+  const retailDetailRows = [...retailItemRows, buildItemsTotalRow(retailItemRows)];
+  const wholesaleDetailRows = [...wholesaleItemRows, buildItemsTotalRow(wholesaleItemRows)];
 
   const productTotalsMap = new Map<
     string,
@@ -189,9 +194,9 @@ export async function GET(request: NextRequest) {
       ],
     },
     {
-      name: "Détail articles",
-      rows: detailRows,
-      boldRows: [detailRows.length - 1],
+      name: "Détail - Vente au détail",
+      rows: retailDetailRows,
+      boldRows: [retailDetailRows.length - 1],
       columns: [
         { key: "reference", label: "Référence vente" },
         { key: "sale_date", label: "Date" },
@@ -200,7 +205,24 @@ export async function GET(request: NextRequest) {
         { key: "product_name", label: "Produit" },
         { key: "sku", label: "SKU" },
         { key: "category_name", label: "Catégorie" },
-        { key: "sale_type", label: "Type de vente" },
+        { key: "quantity", label: "Quantité", numberFormat: true },
+        { key: "unit_price", label: "Prix unitaire", numberFormat: true },
+        { key: "discount_amount", label: "Remise (FCFA)", numberFormat: true },
+        { key: "line_total", label: "Total ligne", numberFormat: true },
+      ],
+    },
+    {
+      name: "Détail - Vente en gros",
+      rows: wholesaleDetailRows,
+      boldRows: [wholesaleDetailRows.length - 1],
+      columns: [
+        { key: "reference", label: "Référence vente" },
+        { key: "sale_date", label: "Date" },
+        { key: "store_name", label: "Magasin" },
+        { key: "customer_name", label: "Client" },
+        { key: "product_name", label: "Produit" },
+        { key: "sku", label: "SKU" },
+        { key: "category_name", label: "Catégorie" },
         { key: "quantity", label: "Quantité", numberFormat: true },
         { key: "unit_price", label: "Prix unitaire", numberFormat: true },
         { key: "discount_amount", label: "Remise (FCFA)", numberFormat: true },

@@ -13,6 +13,7 @@ export function SalesFilterBar({ stores, showStore }: { stores: Store[]; showSto
   const searchParams = useSearchParams();
 
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const [product, setProduct] = useState(searchParams.get("product") ?? "");
   const [status, setStatus] = useState(searchParams.get("status") ?? "");
   const [storeId, setStoreId] = useState(searchParams.get("store_id") ?? "");
   const [from, setFrom] = useState(searchParams.get("from") ?? "");
@@ -22,6 +23,7 @@ export function SalesFilterBar({ stores, showStore }: { stores: Store[]; showSto
     e.preventDefault();
     const params = new URLSearchParams();
     if (search) params.set("q", search);
+    if (product) params.set("product", product);
     if (status) params.set("status", status);
     if (storeId) params.set("store_id", storeId);
     if (from) params.set("from", from);
@@ -31,6 +33,7 @@ export function SalesFilterBar({ stores, showStore }: { stores: Store[]; showSto
 
   function reset() {
     setSearch("");
+    setProduct("");
     setStatus("");
     setStoreId("");
     setFrom("");
@@ -43,6 +46,8 @@ export function SalesFilterBar({ stores, showStore }: { stores: Store[]; showSto
       <div className="col-span-2 sm:col-span-1 lg:col-span-2">
         <Input placeholder="Référence, client..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
+
+      <Input placeholder="Produit (nom ou SKU)..." value={product} onChange={(e) => setProduct(e.target.value)} />
 
       <Select value={status} onChange={(e) => setStatus(e.target.value)}>
         <option value="">Tous les statuts</option>
