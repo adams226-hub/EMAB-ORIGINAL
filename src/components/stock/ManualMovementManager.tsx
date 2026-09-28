@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +24,7 @@ export function ManualMovementManager({
   stores,
   fixedStoreId,
   canReverse,
+  storeFilter,
 }: {
   kind: ManualMovementKind;
   movements: StockMovementDetail[];
@@ -31,6 +32,7 @@ export function ManualMovementManager({
   stores: Store[];
   fixedStoreId: string | null;
   canReverse: boolean;
+  storeFilter?: ReactNode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -71,6 +73,8 @@ export function ManualMovementManager({
           {copy.cta}
         </Button>
       </div>
+
+      {storeFilter && <div className="flex justify-end">{storeFilter}</div>}
 
       <StockMovementsTable
         movements={movements}
