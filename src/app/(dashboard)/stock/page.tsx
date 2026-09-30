@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { StockMovementsTable } from "@/components/stock/StockMovementsTable";
 import { RealtimeStockWatcher } from "@/components/stock/RealtimeStockWatcher";
 import { StockStoreFilter } from "@/components/stock/StockStoreFilter";
+import { StockTotalsByCategory, type StockTotalByCategoryRow } from "@/components/stock/StockTotalsByCategory";
 import { formatCurrency } from "@/lib/utils";
 import { hasAllStoresScope } from "@/lib/auth/permissions";
 
@@ -31,7 +32,9 @@ export default async function StockDashboardPage({
     .select("*")
     .order("created_at", { ascending: false })
     .limit(10);
-  let stockQuery = supabase.from("product_stock").select("quantity, products ( sale_price )");
+  let stockQuery = supabase
+    .from("product_stock")
+    .select("quantity, products ( sale_price, categories ( name ) )");
 
   if (storeId) {
     alertsQuery = alertsQuery.eq("store_id", storeId);
@@ -48,10 +51,28 @@ export default async function StockDashboardPage({
       : Promise.resolve({ data: [] }),
   ]);
 
-  type StockRow = { quantity: number; products: { sale_price: number } | null };
+  type StockRow = {
+    quantity: number;
+    products: { sale_price: number; categories: { name: string } | null } | null;
+  };
   const stock = (stockRows ?? []) as unknown as StockRow[];
   const totalStockUnits = stock.reduce((sum, r) => sum + Number(r.quantity), 0);
   const stockValue = stock.reduce((sum, r) => sum + Number(r.quantity) * Number(r.products?.sale_price ?? 0), 0);
+
+  const categoryTotalsMap = new Map<string, StockTotalByCategoryRow>();
+  for (const row of stock) {
+    const categoryName = row.products?.categories?.name ?? "Sans catégorie";
+    const quantity = Number(row.quantity);
+    const value = quantity * Number(row.products?.sale_price ?? 0);
+    const existing = categoryTotalsMap.get(categoryName);
+    if (existing) {
+      existing.quantity += quantity;
+      existing.value += value;
+    } else {
+      categoryTotalsMap.set(categoryName, { category_name: categoryName, quantity, value });
+    }
+  }
+  const categoryTotals = Array.from(categoryTotalsMap.values()).sort((a, b) => b.value - a.value);
 
   const selectedStoreName = storeId ? (stores ?? []).find((s) => s.id === storeId)?.name : null;
 
@@ -80,6 +101,8 @@ export default async function StockDashboardPage({
           tone="warning"
         />
       </div>
+
+      <StockTotalsByCategory rows={categoryTotals} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
