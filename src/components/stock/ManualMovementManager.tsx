@@ -25,6 +25,7 @@ export function ManualMovementManager({
   fixedStoreId,
   canReverse,
   storeFilter,
+  totalsByProduct,
 }: {
   kind: ManualMovementKind;
   movements: StockMovementDetail[];
@@ -33,6 +34,7 @@ export function ManualMovementManager({
   fixedStoreId: string | null;
   canReverse: boolean;
   storeFilter?: ReactNode;
+  totalsByProduct?: ReactNode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -75,6 +77,8 @@ export function ManualMovementManager({
       </div>
 
       {storeFilter && <div className="flex justify-end">{storeFilter}</div>}
+
+      {totalsByProduct}
 
       <StockMovementsTable
         movements={movements}
