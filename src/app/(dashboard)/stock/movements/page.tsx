@@ -5,7 +5,7 @@ import { StockMovementsTable } from "@/components/stock/StockMovementsTable";
 import { StockMovementNav } from "@/components/stock/StockMovementNav";
 import { MovementsFilterBar } from "@/components/stock/MovementsFilterBar";
 import { cn } from "@/lib/utils";
-import { hasAllStoresScope } from "@/lib/auth/permissions";
+import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 import type { MovementType } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ export default async function StockMovementsPage({
     .order("created_at", { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1);
 
-  if (!hasAllStoresScope(profile.role) && profile.store_id) {
+  if (!hasAllStoresScopeForStock(profile.role) && profile.store_id) {
     query = query.eq("store_id", profile.store_id);
   } else if (searchParams.store_id) {
     query = query.eq("store_id", searchParams.store_id);
@@ -56,7 +56,7 @@ export default async function StockMovementsPage({
 
   const [{ data: movements, count }, { data: stores }] = await Promise.all([
     query,
-    hasAllStoresScope(profile.role) ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
+    hasAllStoresScopeForStock(profile.role) ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
   ]);
 
   const reversedIds = new Set((movements ?? []).filter((m) => m.reversal_of).map((m) => m.reversal_of as string));
@@ -70,7 +70,7 @@ export default async function StockMovementsPage({
 
   return (
     <div className="space-y-4">
-      <StockMovementNav />
+      <StockMovementNav role={profile.role} />
 
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Journal des mouvements</h1>
@@ -79,11 +79,11 @@ export default async function StockMovementsPage({
         </p>
       </div>
 
-      <MovementsFilterBar stores={stores ?? []} showStore={hasAllStoresScope(profile.role)} />
+      <MovementsFilterBar stores={stores ?? []} showStore={hasAllStoresScopeForStock(profile.role)} />
 
       <StockMovementsTable
         movements={movements ?? []}
-        showStore={hasAllStoresScope(profile.role)}
+        showStore={hasAllStoresScopeForStock(profile.role)}
         reversedIds={reversedIds}
         canReverse={false}
       />

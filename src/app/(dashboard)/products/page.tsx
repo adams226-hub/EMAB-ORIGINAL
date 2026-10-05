@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { ProductsManager, type ProductRow } from "@/components/products/ProductsManager";
-import { hasAllStoresScope } from "@/lib/auth/permissions";
+import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 import type { Product } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function ProductsPage() {
     supabase.from("products").select("*, categories ( name )").order("created_at", { ascending: false }),
     supabase.from("categories").select("*").order("name"),
     supabase.from("product_stock").select("product_id, quantity"),
-    hasAllStoresScope(profile.role)
+    hasAllStoresScopeForStock(profile.role)
       ? supabase.from("stores").select("*").eq("is_active", true).order("name")
       : Promise.resolve({ data: [] }),
   ]);

@@ -20,7 +20,7 @@ export default async function FinancialReportsPage({
 }: {
   searchParams: { from?: string; to?: string; store_id?: string };
 }) {
-  await requireRole(["super_admin"]);
+  await requireRole(["super_admin", "manager"]);
   const supabase = createClient();
 
   const defaults = defaultPeriod();

@@ -4,7 +4,7 @@ import { CatalogTabs } from "@/components/catalog/CatalogTabs";
 import { ProductsManager, type ProductRow } from "@/components/products/ProductsManager";
 import { CategoriesManager } from "@/components/categories/CategoriesManager";
 import { UnitsManager } from "@/components/units/UnitsManager";
-import { hasAllStoresScope } from "@/lib/auth/permissions";
+import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 import type { Product } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export default async function CatalogPage() {
       supabase.from("products").select("*, categories ( name )").order("created_at", { ascending: false }),
       supabase.from("categories").select("*").order("name"),
       supabase.from("product_stock").select("product_id, quantity"),
-      hasAllStoresScope(profile.role)
+      hasAllStoresScopeForStock(profile.role)
         ? supabase.from("stores").select("*").eq("is_active", true).order("name")
         : Promise.resolve({ data: [] }),
       supabase.from("units").select("*").order("name"),

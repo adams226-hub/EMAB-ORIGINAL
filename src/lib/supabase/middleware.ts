@@ -13,7 +13,7 @@ const ROLE_RESTRICTED_PREFIXES: { prefix: string; roles: string[] }[] = [
   { prefix: "/units", roles: ["super_admin", "manager"] },
   { prefix: "/administration", roles: ["super_admin"] },
   { prefix: "/payment-methods", roles: ["super_admin"] },
-  { prefix: "/finance", roles: ["super_admin"] },
+  { prefix: "/finance", roles: ["super_admin", "manager"] },
   { prefix: "/analytics/sales", roles: ["super_admin", "manager", "cashier"] },
   { prefix: "/analytics", roles: ["super_admin"] },
   { prefix: "/audit-log", roles: ["super_admin"] },

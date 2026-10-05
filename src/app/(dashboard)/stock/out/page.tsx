@@ -8,7 +8,7 @@ import { hasAllStoresScope } from "@/lib/auth/permissions";
 export const dynamic = "force-dynamic";
 
 export default async function StockOutPage({ searchParams }: { searchParams: { store_id?: string } }) {
-  const profile = await requireRole(["super_admin", "manager", "stock_keeper"]);
+  const profile = await requireRole(["super_admin"]);
   const supabase = createClient();
 
   const canFilterByStore = hasAllStoresScope(profile.role);
@@ -54,6 +54,7 @@ export default async function StockOutPage({ searchParams }: { searchParams: { s
   return (
     <ManualMovementManager
       kind="out"
+      role={profile.role}
       movements={movements ?? []}
       products={products ?? []}
       stores={stores ?? []}

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { ManualMovementManager } from "@/components/stock/ManualMovementManager";
-import { hasAllStoresScope } from "@/lib/auth/permissions";
+import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -16,14 +16,14 @@ export default async function StockAdjustmentsPage() {
     .order("created_at", { ascending: false })
     .limit(200);
 
-  if (!hasAllStoresScope(profile.role) && profile.store_id) {
+  if (!hasAllStoresScopeForStock(profile.role) && profile.store_id) {
     movementsQuery = movementsQuery.eq("store_id", profile.store_id);
   }
 
   const [{ data: movements }, { data: products }, { data: stores }] = await Promise.all([
     movementsQuery,
     supabase.from("products").select("*").eq("is_active", true).order("name"),
-    hasAllStoresScope(profile.role)
+    hasAllStoresScopeForStock(profile.role)
       ? supabase.from("stores").select("*").eq("is_active", true).order("name")
       : Promise.resolve({ data: [] }),
   ]);
@@ -31,10 +31,11 @@ export default async function StockAdjustmentsPage() {
   return (
     <ManualMovementManager
       kind="adjustment"
+      role={profile.role}
       movements={movements ?? []}
       products={products ?? []}
       stores={stores ?? []}
-      fixedStoreId={hasAllStoresScope(profile.role) ? null : profile.store_id}
+      fixedStoreId={hasAllStoresScopeForStock(profile.role) ? null : profile.store_id}
       canReverse
     />
   );

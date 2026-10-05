@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
-import { hasAllStoresScope } from "@/lib/auth/permissions";
+import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 
 const WRITE_ROLES = ["super_admin", "manager", "cashier", "stock_keeper"] as const;
 
@@ -19,7 +19,7 @@ export async function createStockCount(input: z.infer<typeof createCountSchema>)
   const parsed = createCountSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  if (!hasAllStoresScope(profile.role) && profile.store_id !== parsed.data.store_id) {
+  if (!hasAllStoresScopeForStock(profile.role) && profile.store_id !== parsed.data.store_id) {
     return { error: "Vous ne pouvez lancer un inventaire que pour votre propre magasin." };
   }
 

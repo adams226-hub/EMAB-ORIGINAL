@@ -12,6 +12,7 @@ export type ModuleKey =
   | "stock_counts"
   | "stock_in"
   | "stock_out"
+  | "stock_transfers"
   | "units"
   | "pos"
   | "sales"
@@ -40,15 +41,16 @@ export const MODULE_PERMISSIONS: Record<ModuleKey, UserRole[]> = {
   stock_movements: ["super_admin", "manager", "stock_keeper"],
   stock_counts: ["super_admin", "manager", "cashier", "stock_keeper"],
   stock_in: ["super_admin", "manager", "stock_keeper"],
-  stock_out: ["super_admin", "manager", "stock_keeper"],
+  stock_out: ["super_admin"],
+  stock_transfers: ["super_admin", "manager", "stock_keeper"],
   units: ["super_admin", "manager"],
   pos: ["super_admin", "manager", "cashier"],
-  sales: ["super_admin", "manager", "cashier"],
+  sales: ["super_admin", "manager", "cashier", "stock_keeper"],
   customers: ["super_admin", "manager", "cashier"],
   receivables: ["super_admin", "manager", "cashier"],
   payment_methods: ["super_admin"],
-  financial_dashboard: ["super_admin"],
-  financial_reports: ["super_admin"],
+  financial_dashboard: ["super_admin", "manager"],
+  financial_reports: ["super_admin", "manager"],
   analytics: ["super_admin"],
   sales_report: ["super_admin", "manager", "cashier"],
   audit_log: ["super_admin"],
@@ -65,7 +67,7 @@ export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   super_admin: "Accès total à tous les magasins et modules",
   manager: "Point de vente, ventes, catalogue, stock et clients, sur tous les magasins",
   cashier: "Point de vente, ventes, inventaire, clients et créances",
-  stock_keeper: "Entrées/sorties de stock, inventaire et catalogue",
+  stock_keeper: "Entrées, transferts, inventaire et catalogue, sur tous les magasins",
 };
 
 export const CREATABLE_ROLES: UserRole[] = ["super_admin", "manager", "cashier", "stock_keeper"];
@@ -87,6 +89,16 @@ export function isSuperAdmin(role: UserRole): boolean {
  */
 export function hasAllStoresScope(role: UserRole): boolean {
   return role === "super_admin" || role === "manager";
+}
+
+/**
+ * Le Magasinier voit et opère aussi sur tous les magasins, mais
+ * uniquement pour les modules de stock (vue d'ensemble, entrées,
+ * mouvements, inventaires, transferts) — pas pour les ventes, finances
+ * ou autres modules où il reste limité à son propre magasin.
+ */
+export function hasAllStoresScopeForStock(role: UserRole): boolean {
+  return role === "super_admin" || role === "manager" || role === "stock_keeper";
 }
 
 /**

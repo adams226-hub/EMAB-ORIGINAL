@@ -28,7 +28,7 @@ export default async function SalesPage({
     page?: string;
   };
 }) {
-  const profile = await requireRole(["super_admin", "manager", "cashier"]);
+  const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
 
   const page = Math.max(1, Number(searchParams.page ?? "1"));

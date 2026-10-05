@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { CountDetail, type CountItemRow } from "@/components/counts/CountDetail";
-import { hasAllStoresScope } from "@/lib/auth/permissions";
+import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -40,12 +40,13 @@ export default async function StockCountDetailPage({ params }: { params: { id: s
   }));
 
   const isSuperAdmin = profile.role === "super_admin";
-  const atStore = hasAllStoresScope(profile.role) || profile.store_id === count.store_id;
+  const atStore = hasAllStoresScopeForStock(profile.role) || profile.store_id === count.store_id;
 
   const canEdit = count.status === "draft" && (isSuperAdmin || atStore);
   const canSubmit = canEdit;
   const canValidate =
-    count.status === "submitted" && (isSuperAdmin || (["manager", "cashier"].includes(profile.role) && atStore));
+    count.status === "submitted" &&
+    (isSuperAdmin || (["manager", "cashier", "stock_keeper"].includes(profile.role) && atStore));
 
   return (
     <div className="space-y-6">

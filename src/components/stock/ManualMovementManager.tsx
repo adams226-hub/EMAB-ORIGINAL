@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import type { Product, Store, StockMovementDetail } from "@/types/database.types";
+import type { Product, Store, StockMovementDetail, UserRole } from "@/types/database.types";
 import { ManualMovementForm, type ManualMovementKind } from "./ManualMovementForm";
 import { StockMovementsTable } from "./StockMovementsTable";
 import { StockMovementNav } from "./StockMovementNav";
@@ -19,6 +19,7 @@ const TITLES: Record<ManualMovementKind, { title: string; cta: string; subtitle:
 
 export function ManualMovementManager({
   kind,
+  role,
   movements,
   products,
   stores,
@@ -28,6 +29,7 @@ export function ManualMovementManager({
   totalsByProduct,
 }: {
   kind: ManualMovementKind;
+  role: UserRole;
   movements: StockMovementDetail[];
   products: Product[];
   stores: Store[];
@@ -58,7 +60,7 @@ export function ManualMovementManager({
 
   return (
     <div className="space-y-4">
-      {kind !== "adjustment" && <StockMovementNav />}
+      {kind !== "adjustment" && <StockMovementNav role={role} />}
 
       <div className="flex items-center justify-between">
         <div>

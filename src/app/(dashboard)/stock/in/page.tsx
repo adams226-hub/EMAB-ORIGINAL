@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/auth/session";
 import { ManualMovementManager } from "@/components/stock/ManualMovementManager";
 import { StockStoreFilter } from "@/components/stock/StockStoreFilter";
 import { StockTotalsByProduct, type StockTotalByProductRow } from "@/components/stock/StockTotalsByProduct";
-import { hasAllStoresScope } from "@/lib/auth/permissions";
+import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ export default async function StockInPage({ searchParams }: { searchParams: { st
   const profile = await requireRole(["super_admin", "manager", "stock_keeper"]);
   const supabase = createClient();
 
-  const canFilterByStore = hasAllStoresScope(profile.role);
+  const canFilterByStore = hasAllStoresScopeForStock(profile.role);
   const filterStoreId = canFilterByStore ? searchParams.store_id || null : profile.store_id;
 
   let movementsQuery = supabase
@@ -54,6 +54,7 @@ export default async function StockInPage({ searchParams }: { searchParams: { st
   return (
     <ManualMovementManager
       kind="in"
+      role={profile.role}
       movements={movements ?? []}
       products={products ?? []}
       stores={stores ?? []}

@@ -197,6 +197,31 @@ export type StockCountItem = {
   counted_quantity: number | null;
 };
 
+export type TransferStatus = "pending" | "in_transit" | "received" | "cancelled";
+
+export type StockTransfer = {
+  id: string;
+  reference: string;
+  from_store_id: string;
+  to_store_id: string;
+  status: TransferStatus;
+  requested_by: string | null;
+  validated_by: string | null;
+  validated_at: string | null;
+  received_by: string | null;
+  received_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StockTransferItem = {
+  id: string;
+  transfer_id: string;
+  product_id: string;
+  quantity: number;
+};
+
 // ---------------------------------------------------------------------
 // Phase 3 — Ventes, finances
 // ---------------------------------------------------------------------
@@ -422,6 +447,18 @@ export type Database = {
         Update: Partial<StockCountItem>;
         Relationships: [];
       };
+      stock_transfers: {
+        Row: StockTransfer;
+        Insert: Partial<StockTransfer>;
+        Update: Partial<StockTransfer>;
+        Relationships: [];
+      };
+      stock_transfer_items: {
+        Row: StockTransferItem;
+        Insert: Partial<StockTransferItem>;
+        Update: Partial<StockTransferItem>;
+        Relationships: [];
+      };
       payment_methods: {
         Row: PaymentMethod;
         Insert: Partial<PaymentMethod>;
@@ -472,6 +509,9 @@ export type Database = {
     Functions: {
       fn_submit_stock_count: { Args: { p_count_id: string }; Returns: StockCount };
       fn_validate_stock_count: { Args: { p_count_id: string }; Returns: StockCount };
+      fn_validate_transfer: { Args: { p_transfer_id: string }; Returns: StockTransfer };
+      fn_receive_transfer: { Args: { p_transfer_id: string }; Returns: StockTransfer };
+      fn_cancel_transfer: { Args: { p_transfer_id: string }; Returns: StockTransfer };
       fn_create_sale: {
         Args: {
           p_store_id: string;

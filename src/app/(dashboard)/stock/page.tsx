@@ -11,7 +11,7 @@ import { RealtimeStockWatcher } from "@/components/stock/RealtimeStockWatcher";
 import { StockStoreFilter } from "@/components/stock/StockStoreFilter";
 import { StockTotalsByCategory, type StockTotalByCategoryRow } from "@/components/stock/StockTotalsByCategory";
 import { formatCurrency } from "@/lib/utils";
-import { hasAllStoresScope } from "@/lib/auth/permissions";
+import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,7 @@ export default async function StockDashboardPage({
   const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
 
-  const canFilterByStore = hasAllStoresScope(profile.role);
+  const canFilterByStore = hasAllStoresScopeForStock(profile.role);
   const storeId = canFilterByStore ? searchParams.store_id || null : profile.store_id;
 
   let alertsQuery = supabase.from("v_stock_alerts").select("*").order("quantity");
