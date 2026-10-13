@@ -2,12 +2,17 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth/session";
 import { ManualMovementManager } from "@/components/stock/ManualMovementManager";
 import { StockStoreFilter } from "@/components/stock/StockStoreFilter";
+import { DateRangeFilter } from "@/components/stock/DateRangeFilter";
 import { StockTotalsByProduct, type StockTotalByProductRow } from "@/components/stock/StockTotalsByProduct";
 import { hasAllStoresScope } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 
-export default async function StockOutPage({ searchParams }: { searchParams: { store_id?: string } }) {
+export default async function StockOutPage({
+  searchParams,
+}: {
+  searchParams: { store_id?: string; from?: string; to?: string };
+}) {
   const profile = await requireRole(["super_admin"]);
   const supabase = createClient();
 
@@ -24,11 +29,15 @@ export default async function StockOutPage({ searchParams }: { searchParams: { s
   if (filterStoreId) {
     movementsQuery = movementsQuery.eq("store_id", filterStoreId);
   }
+  if (searchParams.from) movementsQuery = movementsQuery.gte("created_at", `${searchParams.from}T00:00:00`);
+  if (searchParams.to) movementsQuery = movementsQuery.lte("created_at", `${searchParams.to}T23:59:59`);
 
   let totalsQuery = supabase.from("v_stock_movements_detail").select("product_name, sku, quantity").eq("type", "out").limit(5000);
   if (filterStoreId) {
     totalsQuery = totalsQuery.eq("store_id", filterStoreId);
   }
+  if (searchParams.from) totalsQuery = totalsQuery.gte("created_at", `${searchParams.from}T00:00:00`);
+  if (searchParams.to) totalsQuery = totalsQuery.lte("created_at", `${searchParams.to}T23:59:59`);
 
   const [{ data: movements }, { data: products }, { data: stores }, { data: totalsRows }] = await Promise.all([
     movementsQuery,
@@ -60,7 +69,12 @@ export default async function StockOutPage({ searchParams }: { searchParams: { s
       stores={stores ?? []}
       fixedStoreId={canFilterByStore ? null : profile.store_id}
       canReverse
-      storeFilter={canFilterByStore ? <StockStoreFilter stores={stores ?? []} /> : undefined}
+      storeFilter={
+        <div className="flex flex-wrap items-end gap-2">
+          {canFilterByStore && <StockStoreFilter stores={stores ?? []} />}
+          <DateRangeFilter />
+        </div>
+      }
       totalsByProduct={<StockTotalsByProduct title="Totaux sorties par produit" rows={totals} />}
     />
   );

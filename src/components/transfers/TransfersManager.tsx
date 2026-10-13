@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, ArrowLeftRight } from "lucide-react";
@@ -28,11 +28,13 @@ export function TransfersManager({
   products,
   stores,
   fixedFromStoreId,
+  filterBar,
 }: {
   transfers: TransferRow[];
   products: Product[];
   stores: Store[];
   fixedFromStoreId: string | null;
+  filterBar?: ReactNode;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -68,6 +70,8 @@ export function TransfersManager({
           Nouveau transfert
         </Button>
       </div>
+
+      {filterBar && <div className="flex justify-end">{filterBar}</div>}
 
       {transfers.length === 0 ? (
         <EmptyState
