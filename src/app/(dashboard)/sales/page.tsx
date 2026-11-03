@@ -31,6 +31,8 @@ export default async function SalesPage({
   const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
 
+  const canViewAllStores = hasAllStoresScope(profile.role) || profile.role === "stock_keeper";
+
   const page = Math.max(1, Number(searchParams.page ?? "1"));
   const offset = (page - 1) * PAGE_SIZE;
 
@@ -40,7 +42,7 @@ export default async function SalesPage({
     .order("sale_date", { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1);
 
-  if (!hasAllStoresScope(profile.role) && profile.store_id) {
+  if (!canViewAllStores && profile.store_id) {
     query = query.eq("store_id", profile.store_id);
   } else if (searchParams.store_id) {
     query = query.eq("store_id", searchParams.store_id);
@@ -81,7 +83,7 @@ export default async function SalesPage({
 
   const [{ data: sales, count }, { data: stores }] = await Promise.all([
     query,
-    hasAllStoresScope(profile.role) ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
+    canViewAllStores ? supabase.from("stores").select("*").order("name") : Promise.resolve({ data: [] }),
   ]);
 
   const startOfDay = new Date();
@@ -96,7 +98,7 @@ export default async function SalesPage({
     .gte("sale_date", startOfDay.toISOString())
     .lte("sale_date", endOfDay.toISOString());
 
-  if (!hasAllStoresScope(profile.role) && profile.store_id) {
+  if (!canViewAllStores && profile.store_id) {
     todaySalesQuery = todaySalesQuery.eq("store_id", profile.store_id);
   } else if (searchParams.store_id) {
     todaySalesQuery = todaySalesQuery.eq("store_id", searchParams.store_id);
@@ -148,7 +150,7 @@ export default async function SalesPage({
 
       <TodaySalesByProduct rows={todayProductSales} />
 
-      <SalesFilterBar stores={stores ?? []} showStore={hasAllStoresScope(profile.role)} />
+      <SalesFilterBar stores={stores ?? []} showStore={canViewAllStores} />
 
       {!sales || sales.length === 0 ? (
         <EmptyState icon={Receipt} title="Aucune vente" description="Aucune vente ne correspond à ces critères." />
@@ -159,7 +161,7 @@ export default async function SalesPage({
               <TH>Référence</TH>
               <TH>Date</TH>
               <TH>Client</TH>
-              {hasAllStoresScope(profile.role) && <TH>Magasin</TH>}
+              {canViewAllStores && <TH>Magasin</TH>}
               <TH>Total</TH>
               <TH>Solde dû</TH>
               <TH>Statut</TH>
@@ -175,7 +177,7 @@ export default async function SalesPage({
                 </TD>
                 <TD className="text-sm text-slate-500">{formatDate(sale.sale_date)}</TD>
                 <TD>{sale.customer_name ?? "Client de passage"}</TD>
-                {hasAllStoresScope(profile.role) && <TD>{sale.store_name}</TD>}
+                {canViewAllStores && <TD>{sale.store_name}</TD>}
                 <TD className="font-medium">{formatCurrency(sale.total_amount)}</TD>
                 <TD className={cn(sale.amount_due > 0 && "font-medium text-amber-600")}>
                   {formatCurrency(sale.amount_due)}

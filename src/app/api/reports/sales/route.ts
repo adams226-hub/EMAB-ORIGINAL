@@ -39,8 +39,9 @@ type SaleItemRow = {
 };
 
 export async function GET(request: NextRequest) {
-  const profile = await requireRole(["super_admin", "manager", "cashier"]);
+  const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
+  const canViewAllStores = hasAllStoresScope(profile.role) || profile.role === "stock_keeper";
 
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from");
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
     .select("*")
     .order("sale_date", { ascending: false });
 
-  if (!hasAllStoresScope(profile.role) && profile.store_id) {
+  if (!canViewAllStores && profile.store_id) {
     query = query.eq("store_id", profile.store_id);
   } else if (storeId) {
     query = query.eq("store_id", storeId);

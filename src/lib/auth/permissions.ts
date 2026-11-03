@@ -52,7 +52,7 @@ export const MODULE_PERMISSIONS: Record<ModuleKey, UserRole[]> = {
   financial_dashboard: ["super_admin", "manager"],
   financial_reports: ["super_admin", "manager"],
   analytics: ["super_admin"],
-  sales_report: ["super_admin", "manager", "cashier"],
+  sales_report: ["super_admin", "manager", "cashier", "stock_keeper"],
   audit_log: ["super_admin"],
 };
 
@@ -67,7 +67,7 @@ export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   super_admin: "Accès total à tous les magasins et modules",
   manager: "Point de vente, ventes, catalogue, stock et clients, sur tous les magasins",
   cashier: "Point de vente, ventes, inventaire, clients et créances",
-  stock_keeper: "Entrées, transferts, inventaire et catalogue, sur tous les magasins",
+  stock_keeper: "Entrées, transferts, inventaire, catalogue et ventes, sur tous les magasins",
 };
 
 export const CREATABLE_ROLES: UserRole[] = ["super_admin", "manager", "cashier", "stock_keeper"];

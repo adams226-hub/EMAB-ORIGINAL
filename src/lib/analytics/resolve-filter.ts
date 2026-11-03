@@ -21,7 +21,8 @@ export function resolveAnalyticsFilter(
 
   const { from, to, previousFrom, previousTo } = resolvePeriod(preset, searchParams.from, searchParams.to);
 
-  const storeId = hasAllStoresScope(profile.role) ? searchParams.store_id || null : profile.store_id;
+  const canViewAllStores = hasAllStoresScope(profile.role) || profile.role === "stock_keeper";
+  const storeId = canViewAllStores ? searchParams.store_id || null : profile.store_id;
 
   return { preset, from, to, previousFrom, previousTo, storeId };
 }

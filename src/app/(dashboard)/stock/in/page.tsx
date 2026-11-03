@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth/session";
 import { ManualMovementManager } from "@/components/stock/ManualMovementManager";
 import { StockStoreFilter } from "@/components/stock/StockStoreFilter";
 import { DateRangeFilter } from "@/components/stock/DateRangeFilter";
+import { ProductFilter } from "@/components/stock/ProductFilter";
 import { StockTotalsByProduct, type StockTotalByProductRow } from "@/components/stock/StockTotalsByProduct";
 import { hasAllStoresScopeForStock } from "@/lib/auth/permissions";
 
@@ -11,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function StockInPage({
   searchParams,
 }: {
-  searchParams: { store_id?: string; from?: string; to?: string };
+  searchParams: { store_id?: string; from?: string; to?: string; product?: string };
 }) {
   const profile = await requireRole(["super_admin", "manager", "stock_keeper"]);
   const supabase = createClient();
@@ -31,6 +32,8 @@ export default async function StockInPage({
   }
   if (searchParams.from) movementsQuery = movementsQuery.gte("created_at", `${searchParams.from}T00:00:00`);
   if (searchParams.to) movementsQuery = movementsQuery.lte("created_at", `${searchParams.to}T23:59:59`);
+  const safeProduct = searchParams.product?.replace(/[,()%]/g, "").trim();
+  if (safeProduct) movementsQuery = movementsQuery.or(`product_name.ilike.%${safeProduct}%,sku.ilike.%${safeProduct}%`);
 
   let totalsQuery = supabase.from("v_stock_movements_detail").select("product_name, sku, quantity").eq("type", "in").limit(5000);
   if (filterStoreId) {
@@ -38,6 +41,7 @@ export default async function StockInPage({
   }
   if (searchParams.from) totalsQuery = totalsQuery.gte("created_at", `${searchParams.from}T00:00:00`);
   if (searchParams.to) totalsQuery = totalsQuery.lte("created_at", `${searchParams.to}T23:59:59`);
+  if (safeProduct) totalsQuery = totalsQuery.or(`product_name.ilike.%${safeProduct}%,sku.ilike.%${safeProduct}%`);
 
   const [{ data: movements }, { data: products }, { data: stores }, { data: totalsRows }] = await Promise.all([
     movementsQuery,
@@ -73,6 +77,7 @@ export default async function StockInPage({
         <div className="flex flex-wrap items-end gap-2">
           {canFilterByStore && <StockStoreFilter stores={stores ?? []} />}
           <DateRangeFilter />
+          <ProductFilter />
         </div>
       }
       totalsByProduct={<StockTotalsByProduct title="Totaux entrées par produit" rows={totals} />}

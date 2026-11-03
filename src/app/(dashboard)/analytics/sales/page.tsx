@@ -15,12 +15,13 @@ import { formatCurrency } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function SalesAnalyticsPage({ searchParams }: { searchParams: AnalyticsSearchParams }) {
-  const profile = await requireRole(["super_admin", "manager", "cashier"]);
+  const profile = await requireRole(["super_admin", "manager", "cashier", "stock_keeper"]);
   const supabase = createClient();
   const filter = resolveAnalyticsFilter(searchParams, profile);
+  const canViewAllStores = hasAllStoresScope(profile.role) || profile.role === "stock_keeper";
 
   const [{ data: stores }, trend] = await Promise.all([
-    hasAllStoresScope(profile.role) ? supabase.from("stores").select("*").eq("is_active", true).order("name") : Promise.resolve({ data: [] }),
+    canViewAllStores ? supabase.from("stores").select("*").eq("is_active", true).order("name") : Promise.resolve({ data: [] }),
     getSalesTrend(supabase, filter),
   ]);
 
@@ -43,7 +44,7 @@ export default async function SalesAnalyticsPage({ searchParams }: { searchParam
         </a>
       </div>
 
-      <AnalyticsFilterBar preset={filter.preset} from={filter.from} to={filter.to} stores={stores ?? []} showStore={hasAllStoresScope(profile.role)} />
+      <AnalyticsFilterBar preset={filter.preset} from={filter.from} to={filter.to} stores={stores ?? []} showStore={canViewAllStores} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatCard
